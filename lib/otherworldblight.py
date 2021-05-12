@@ -1,4 +1,3 @@
-screen_initialised = False
 import ctypes   # Importing the library for making pop-up boxes (for errors)
 ### Defining the error logging function
 def log(error, error_message):
@@ -9,18 +8,17 @@ def log(error, error_message):
         except:
             error_log.write(str(datetime.datetime.utcnow())[0:19] + " - " + error_message + ": Details Unknown\n")
         error_log.close()
-    except Exception, error:    # This will likely happen only when file_directory has not yet been defined
-        ctypes.windll.user32.MessageBoxA(0, "An error has occurred:\n\n    " + error_message + ".\n\n\nThis error occurred very early during game initialisation and could not be logged.", "Error", 1)
+    except Exception as error:    # This will likely happen only when file_directory has not yet been defined
+        ctypes.windll.user32.MessageBoxW(0, "An error has occurred:\n\n    " + error_message + ".\n\n\nThis error occurred very early during game initialisation and could not be logged.", "Error", 1)
         raise
-    
-    screen_initialised = False  # Temporary; I always want it to raise currently
+
     global ongoing              # Also temporary
     ongoing = False             # Also temporary
-    if screen_initialised and error_message != "Failed to display error message":
+    if pygame.display.get_surface() is not None and error_message != "Failed to display error message":
         error_time = 3*fps
     # add some error sound to play here
     else:   # Creating a window to inform the user that error has occurred
-        ctypes.windll.user32.MessageBoxA(0, "An error has occurred:\n\n    " + error_message + ".\n\n\nPlease check log.txt for details.", "Error", 1)
+        ctypes.windll.user32.MessageBoxW(0, "An error has occurred:\n\n    " + error_message + ".\n\n\nPlease check log.txt for details.", "Error", 1)
         raise
     
         
@@ -36,7 +34,7 @@ def load(file_name):
         if file_type == "":
             error = "null file type [coding syntax error]"
             log(error, "Missing file extension")
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to determine file type of \"" + file_name + "\"")
         
     try:        
@@ -46,12 +44,9 @@ def load(file_name):
             pygame.mixer.music.load(file_directory + "Sound Files\\" + file_name)
         elif file_type == "mpg":
             return pygame.movie.Movie(file_directory + "Video Files\\" + file_name)
-        elif file_type == "py":
-            execfile(file_directory + "Python Files\\" + file_name)
-            globals().update(locals()) # Making all variables loaded within the python file global
         else:
             raise Exception("Invalid file type")
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to load file: \"" + file_name + "\"")
         
 
@@ -68,7 +63,7 @@ try:
         pass
     os.environ["SDL_VIDEODRIVER"] = "windib"
     pygame.init()
-except Exception, error:
+except Exception as error:
     log(error, "Failed to initialise pygame")
 
 try:
@@ -76,7 +71,7 @@ try:
     import datetime, time
     import math, random
     from operator import attrgetter # Gets attributes from classes, so you can do things depending on which class has the lowest/highest attribute
-except Exception, error:
+except Exception as error:
     log(error, "Failed to import modules")
 
 ### ---------- IMPORTING MODULES - END ---------- ###
@@ -88,7 +83,7 @@ except Exception, error:
 try:
     file_directory = os.getcwd()
     file_directory = file_directory[0:len(file_directory)-12]
-except Exception, error:
+except Exception as error:
     log(error, "Unable to determine the game files' location")
 
 ## Assigning essential game variables
@@ -139,7 +134,7 @@ try:
     font = pygame.font.SysFont("Arial Regular", 90, False, False)
     dropfont = pygame.font.SysFont("Impact", 20, False, False)
     
-except Exception, error:
+except Exception as error:
     log(error, "Unable to initialise essential game variables")
 
 # Keyboard inputs
@@ -148,7 +143,7 @@ try:
     input_text = ""
     load("keydown.py")
     load("key_attributes.py")
-except Exception, error:
+except Exception as error:
     log(error, "Failed to initialise keyboard input variabes")
 
 # Setting the screen resolution and creating the screen
@@ -185,7 +180,7 @@ try:
             
     pygame.display.set_caption("Spietz (Alpha 1.0)")
     pygame.display.set_icon(load("game_icon.png")) # Setting the icon for the game window    
-except Exception, error:
+except Exception as error:
     log(error, "Failed to initialise the game window")
 
 ### ---------- VARIABLE ASSIGNMENT - END ---------- ###
@@ -195,9 +190,9 @@ except Exception, error:
 
 try:
     load("core_functions.py")
-except Exception, error:
+except Exception as error:
     log(error, "Failed to load the core game functions")
-    
+
 
 ### ---------- FUNCTION DEFINING - END ---------- ###
 
@@ -244,7 +239,7 @@ class Menu(object):
                 if len(self.options[index]) > 1:
                     screen.blit(self.options[index][self.settings[index]], (0,0))
             
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to display " + self.name + " menu")
         
     # Changes the user's current selection in the menu
@@ -261,7 +256,7 @@ class Menu(object):
                 self.current_selection -= 1
             if (downarrow or s) and self.current_selection < len(self.options) - 1:
                 self.current_selection += 1
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to change menu selection in " + self.name + " menu")
     
     def change_settings(self):
@@ -298,7 +293,7 @@ class Menu(object):
                     self.settings[self.current_selection] -= 1
                 if (rightarrow or d) and self.settings[self.current_selection] < len(self.options[self.current_selection]) - 1:
                     self.settings[self.current_selection] += 1
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to change option setting in " + self.name + " menu")
     
     # Checks if the user has issued a continue command (by clicking or pressing enter/spacebar)
@@ -310,7 +305,7 @@ class Menu(object):
             if left or space or space or enter or numpadenter:
                 current = self.actions[self.current_selection]
                 return True
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to check for user menu action in " + self.name + "menu")
     
     def check_escape(self):
@@ -319,7 +314,7 @@ class Menu(object):
         try:
             if escape:
                 current = self.escape_action
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to check escape")
     
     
@@ -383,7 +378,7 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
                     self.orientation = direction
                     return False
                     
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to change character's (" + self.name + ") coordinates")
     
     
@@ -450,7 +445,7 @@ class Player(Character):
                     self.orientation = "up"
                 if downarrow or s:
                     self.orientation = "down"
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to change player's (" + self.name + ") orientation") 
     
     # Changing the player's x and y grid coordinates according to user input
@@ -467,7 +462,7 @@ class Player(Character):
                 self.move(room, "up")
             elif ((downarrow_held_time > 1 or s_held_time > 1) or ((downarrow_held_time or s_held_time) and self.orientation == "down")) and (is_longest_held(downarrow_held_time) or is_longest_held(s_held_time)):
                 self.move(room, "down")
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to change player's (" + self.name + ") position")
     
     def check_exit(self, room):
@@ -503,7 +498,7 @@ class Npc(Character):
         try:
             if len(self.moves) != 0 and not self.movement_cooldown:
                 self.orientation = self.moves[0]            
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to change NPC's (" + self.name + ") orientation")
     
     # Moving the npc based on its current pending moves
@@ -516,7 +511,7 @@ class Npc(Character):
                 self.move(room, self.moves[0])
                 if self.movement_cooldown == (3*fps)/self.movespeed: # Deleting the current move after the movement command has been issued
                     del self.moves[0]
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to change NPC's (" + self.name + ") position")
     
     def check_collision(self, player):
@@ -611,7 +606,7 @@ class Npc(Character):
                 
                 route.reverse()   # Putting the commands in the correct order (they were placed in the list backwards)
                 self.moves = route
-        except Exception, error:
+        except Exception as error:
             error_logged = False    # Showing that the error has not yet been logged
             try:    # If "goal" is not yet an object; i.e it has not yet been found
                 error_logged = True # Showing that the error has been logged
@@ -709,7 +704,7 @@ class Ability(Character):
                     self.alive = False
                 if self.movement_cooldown == (3*fps)/self.movespeed: # Deleting the current move after the movement command has been issued
                     del self.moves[0]
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to change ability's (" + self.name + ") position")
         
     def check_display(self):
@@ -825,7 +820,7 @@ class Extra(object):
                                 screen.blit(self.image, (room.x + self.x + room.width, room.y + self.y))
                             elif self.scroll_axis == "y":
                                 screen.blit(self.image, (room.x + self.x, room.y + self.y + room.height))
-            except Exception, error:
+            except Exception as error:
                 log(error, "Failed to display extra in " + current_room.name)
             
             
@@ -871,7 +866,7 @@ class Room(object):
                 raise
             else:
                 self.blocked.append(square)        
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to add square to blocked squares list: " + str(square))
     
     # Removing a square from the blocked list
@@ -914,7 +909,7 @@ class Room(object):
                 if extra.placement == "above":
                     extra.display(self, player)
             
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to display room (" + self.name + ") correctly")                 
     
     # Calculating the player's and canvas's position on the screen correctly (such that when the player is near the edge THEY move, not the canvas)
@@ -985,7 +980,7 @@ class Room(object):
                     player.y += -(self.height - screen_height) - self.y
                     self.y = -(self.height - screen_height)
                     
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to calculate player's  and canvas's positions")
     
     # Displaying NPCs on the canvas (and screen if their coordinates are on the screen)
@@ -997,7 +992,7 @@ class Room(object):
             npc.x = add_movement(self, npc, "x", "image")
             npc.y = add_movement(self, npc, "y", "image")
             screen.blit(npc.image, (npc.x,npc.y))
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to display npc's (" + npc.name + ") position")  
 
 ### ---------- CLASS DEFINING - END ---------- ###
@@ -1217,7 +1212,7 @@ try:    # loading images for extras into a dictionary so they only have to be lo
     
     esc_exit = load("esc_exit.png")
     controls_page = load("controls.png")
-except Exception, error:
+except Exception as error:
     log(error, "Failed to load image files")
 
 ### ---------- IMAGE IMPORTING - END ---------- ###
@@ -1228,7 +1223,7 @@ except Exception, error:
 try:
     introduction = load("introduction.mpg")
     introduction.set_display(screen)
-except Exception, error:
+except Exception as error:
     log(error, "Failed to load video files")
 
 ### ---------- VIDEO IMPORTING - END ---------- ###
@@ -1406,7 +1401,7 @@ try:    # Initialising game objects.
     inferno = Ability("Inferno", 12, (0,0), "down", 90, 3, 200, 2, 10)
     inferno.unlocked = True
     inferno.dead = True
-except Exception, error:
+except Exception as error:
     log(error, "Failed to initialise game objects")
     raise
 
@@ -1416,16 +1411,14 @@ try:
     clock = pygame.time.Clock()
     start_time = time.time()
     frame = 1   # Storing the current frame as a variable
-except Exception, error:
+except Exception as error:
     log(error, "Failed to initialise essential screen/window variables")
-
-screen_initialised = True   # Indicating that the screen will now be initialised
 
 ## Program window while loop
 while ongoing:
     try:
         current_time = time.time() - start_time     # Storing the current amount of time that the program has been running
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to update game run duration")
     
     # Resetting inputs
@@ -1436,7 +1429,7 @@ while ongoing:
         right = 0
         # Resetting the keyboard inputs to 0
         load("reset_keys.py")
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to reset user input values")
     
     # Acquiring mouse position
@@ -1444,13 +1437,13 @@ while ongoing:
         mouse_position = pygame.mouse.get_pos()     # Checking the position of the mouse                            
         mouse_x = mouse_position[0]                 # Checking the x coordinate of the mouse                        
         mouse_y = mouse_position[1]                 # Checking the y coordinate of the mouse
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to acquire mouse position")
     
     # Updating key held duration
     try:
         load("key_timer.py")
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to calculate key held duration")
     
     ## Receiving user inputs
@@ -1484,20 +1477,20 @@ while ongoing:
             elif event.type == pygame.KEYUP:
                 load("keyup.py")
                 
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to receive/process user inputs")
     ## Handling user inputs/Displaying the game
     if frame == 1:
         try:
             introduction.play()
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to start introduction")
             
     elif introduction.get_busy():   # Checking to see that the introduction video hasn't stopped playing for whatever reason
         try:
             if escape or space or enter or numpadenter:
                 introduction.stop()
-        except Exception, error:
+        except Exception as error:
             log(error, "Failed to display introduction")
             
     else:
@@ -1513,7 +1506,7 @@ while ongoing:
                 sfx_volume = 0.01*menus["options menu"].settings[1]
                 music_volume = 0.01*menus["options menu"].settings[2]
                 voice_volume = 0.01*menus["options menu"].settings[3]
-            except Exception, error:
+            except Exception as error:
                 log(error, "An error occurred in the " + current)
                 
         elif current == "controls":
@@ -2095,7 +2088,7 @@ while ongoing:
                     
                 
                    
-            except Exception, error:
+            except Exception as error:
                 log(error, "An error occurred in game")
             
         elif current == "exit":
@@ -2114,16 +2107,13 @@ while ongoing:
         frame += 1  # Incrementing the current frame
         pygame.display.flip()   # Updating the screen at the end of blitting
         clock.tick(fps)          # Setting fps limit
-    except Exception, error:
-        screen_initialised = False
+    except Exception as error:
         log(error, "Failed to update screen")
-    
-screen_initialised = False  # Indicating that the screen is no longer initialised
 
 ### ---------- PROGRAM DISPLAY - END ---------- ###
 
 ## Closing and saving the program
 try:
     save_game(save_number)
-except Exception, error:
+except Exception as error:
     log(error, "Game was unable to autosave on exit")

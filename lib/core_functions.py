@@ -2,12 +2,12 @@
 def mousein(start_x, end_x, start_y, end_y):
     """Takes in coordinates as if it was a 1920x1080 screen"""
     global error
-    try:        
+    try:
         if mouse_x > start_x*(screen_width/1920.0) and mouse_x < end_x*(screen_width/1920.0) and mouse_y > start_y*(screen_height/1080.0) and mouse_y < end_y*(screen_height/1080.0):
             return True
         else:
             return False
-    except Exception, error:
+    except Exception as error:
         log("Unable to determine whether mouse coordinates meet the requirements: " + str(start_x) + " < x < " + str(end_x) + ", " + str(start_y) + " < " + str(end_y))
 
 # Checking if the given arrow key has been held down the longest
@@ -19,9 +19,9 @@ def is_longest_held(direction_held_time):
             return True
         else:
             return False
-    except Exception, error:
+    except Exception as error:
         log("Unable to determine direction command which has been issued the longest")
-    
+
 # Corrects the player's coordinates if they are moving
 def add_movement(self, character, axis, file_type):
     global error
@@ -56,10 +56,10 @@ def add_movement(self, character, axis, file_type):
                     return self.y + (self.square_size[1]*character.movement_cooldown*character.movespeed)/(3*fps)
                 else:
                     return self.y
-    except Exception, error:
+    except Exception as error:
         log("Unable to add movement smoothing to character's (" + character.name + ") movement")
-        
-        
+
+
 # Defining a function that transforms Vincent
 def transform():
     global error
@@ -83,7 +83,7 @@ def transform():
             vincent_human.skill_points = vincent_slime.skill_points
             vincent_human.current_life = vincent_slime.current_life
             form = "human"
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to transform Vincent")
 
 # Defining a function to check if Vincent is in a valid place to interact with the given coordinates
@@ -96,7 +96,7 @@ def is_interactable(coordinates):
         return True
     else:
         return False
-    
+
 # Defining functinos to show exp drops, damage values and healing values
 def number_drop(number_type, character, value):
     """number_type = \"damage\", \"exp\", \"heal\""""
@@ -114,7 +114,7 @@ def number_drop(number_type, character, value):
         else:
             error = "Invalid value for number_type: " + str(number_type)
             raise
-        
+
         if value > 0:
             if number_type == "damage":
                 value = str(-value)
@@ -122,44 +122,44 @@ def number_drop(number_type, character, value):
                 value = "+" + str(value)
         else:
             value = str(value)
-            
+
         number_drops.append([drop_x, drop_y, colour, value, drop_y])
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to start number drop display")
 
 def display_number_drop(number_drop_item):
     global error
     try:
         global number_drops
-        screen.blit(dropfont.render(number_drop_item[3], True, number_drop_item[2]), (number_drop_item[0], number_drop_item[1]))        
+        screen.blit(dropfont.render(number_drop_item[3], True, number_drop_item[2]), (number_drop_item[0], number_drop_item[1]))
         return number_drop_item[1] - 3
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to display number drop")
 
-    
+
 # Defining a function to display current loot on the floor
 def display_loot():
     """returns False when the loot menu is closed"""
     global error
-    try:        
+    try:
         global loot, current_loot_slot
-        
+
         if escape or backspace:
             return False
-        
+
         screen.blit(loot_images["loot" + str(current_loot_slot)], (0,0))
-        
+
         for index in range(len(loot)):
             if loot[index] != "":
                 screen.blit(loot_images[loot[index]], (781, 225 + 89*index))
-    
+
         screen.blit(loot_images["controls"], (0,0))
-        
+
         if (uparrow or w) and current_loot_slot > 0:
             current_loot_slot -= 1
         if (downarrow or s) and current_loot_slot < 5:
             current_loot_slot += 1
-        
+
         if enter and loot[current_loot_slot] != "":
             inventory.append(loot[current_loot_slot])
             loot[current_loot_slot] = ""
@@ -168,11 +168,11 @@ def display_loot():
                 if item != "":
                     inventory.append(item)
             loot = ["" for nothing in range(6)]
-            
+
         return True
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to display loot")
-        
+
 # Defining a function that displays the spellbook
 def display_spellbook():
     global error
@@ -186,10 +186,10 @@ def display_spellbook():
         screen.blit(font.render(str(vincent[form].skill_points), True, (199,189,189)), (1665,20))
         screen.blit(font.render(str(firebolt.level), True, (142,0,0)), (834,239))
         screen.blit(esc_exit, (0,0))
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to display spellbook")
 
-# Defining a function that displays the Heads-up Display (HUD)    
+# Defining a function that displays the Heads-up Display (HUD)
 def display_hud():
     global error
     try:
@@ -197,19 +197,19 @@ def display_hud():
         screen.blit(hud_images["expbar"], (728,951), (0,0,(vincent[form].exp/100.0)*467,130))
         screen.blit(hud_images["hud"], (0,0))
         screen.blit(hud_images["health_orb"], (1025,994+(1-(vincent[form].current_life/float(vincent[form].max_life)))*87), (0,(1-(vincent[form].current_life/float(vincent[form].max_life)))*87,123,(vincent[form].current_life/float(vincent[form].max_life))*87))
-        
+
         for index in range(len(spells)):
             if abilities[spells[index]].cooldown > 0:
                 screen.blit(hud_images[spells[index] + "_cooldown"], (760 + 51*index, 1029))
             else:
                 screen.blit(hud_images[spells[index]], (760 + 51*index, 1029))
-        
+
         for index in range(len(inventory)):
             screen.blit(hud_images[inventory[index]], (964 + 51*index, 1029))
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to display heads up display")
-    
-# Defining a function that displays dialogue boxes with the respective text 
+
+# Defining a function that displays dialogue boxes with the respective text
 def display_dialogue(character, dialogue_number):
     global error
     try:
@@ -218,10 +218,10 @@ def display_dialogue(character, dialogue_number):
         if space or enter or numpadenter:
             return False
         return True
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to display dialogue (" + character + str(dialogue_number) + ") correctly")
-                
-# Defining a function to start the playing of music  
+
+# Defining a function to start the playing of music
 def play_music(name, music_type, multiplier=1, loops=-1):
     """sound_type = \"sfx\", \"music\", \"voice\""""
     global error
@@ -232,7 +232,7 @@ def play_music(name, music_type, multiplier=1, loops=-1):
         load(name + ".ogg")
         pygame.mixer.music.set_volume(multiplier*master_volume*volumes[music_type])
         pygame.mixer.music.play(loops)
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to play music track: " + name + ".ogg")
 
 # Defining a function to start the playing of sound effects
@@ -246,9 +246,9 @@ def play_sound(name, sound_type, multiplier=1, loops=0):
         sounds.append(sound)
         sound.set_volume(multiplier*master_volume*volumes[sound_type])
         sound.play(loops)
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to play music track: " + name + ".ogg")
-  
+
 # Defining a function to load a save file
 def load_game(savefile):
     try:
@@ -281,17 +281,17 @@ def load_game(savefile):
             for setting_value in menus["options menu"].settings:    # Reading in the saved options settings
                 setting_value = int(save.readline()[:-1])
             globals().update(locals()) # Making all variables loaded global
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to load " + savefile + " correctly")
         raise
-    
+
 # Defining a function to save a save file
 def save_game(savefile):
     try:
         save = open(file_directory + "Save Files/" + savefile + ".txt", "w")
         save.write(current + "\n")
         save.write(current_room.name[-1] + "\n")
-        save.write(form + "\n")        
+        save.write(form + "\n")
         save.write(str(cutscene0_played) + "\n")
         save.write(str(cutscene1_played) + "\n")
         save.write(str(cutscene2_played) + "\n")
@@ -313,10 +313,10 @@ def save_game(savefile):
         for setting_value in menus["options menu"].settings:    # Saving the players option settings
             save.write(str(setting_value) + "\n")
         save.close()
-    except Exception, error:
+    except Exception as error:
         log(error, "Failed to save game to " + savefile + ".txt")
-    
-    
+
+
 # Defining a function to delete save files
 def deletesave(savefile):
     line_number = 0
@@ -328,7 +328,7 @@ def deletesave(savefile):
         else:
             line_number += 1
     save.close()
-    
+
     save = open(file_directory + "Save Files\save" + savefile + ".txt", "w")
     save.write("No save data\n")
     for line in range(number_of_lines - 1):
