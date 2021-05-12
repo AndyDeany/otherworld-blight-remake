@@ -44,11 +44,11 @@ def load(file_name):
         
     try:        
         if file_type == "png":
-            return pygame.image.load(file_directory + "Image Files\\" + file_name).convert_alpha()
+            return pygame.image.load("../images/" + file_name).convert_alpha()
         elif file_type == "ogg":
             pygame.mixer.music.load(file_directory + "Sound Files\\" + file_name)
         elif file_type == "mpg":
-            return pygame.movie.Movie(file_directory + "Video Files\\" + file_name)
+            return pygame._movie.Movie(file_directory + "Video Files\\" + file_name)
         else:
             raise Exception("Invalid file type")
     except Exception as error:
@@ -104,10 +104,6 @@ try:
     movement_started = False
     #display_options = False
     #display_sure = False
-    # Mouse inputs
-    left_held = 0
-    middle_held = 0
-    right_held = 0
     
     cutscene0_played = False
     cutscene1_played = False
@@ -188,8 +184,8 @@ def mousein(start_x, end_x, start_y, end_y):
     """Takes in coordinates as if it was a 1920x1080 screen"""
     global error
     try:
-        if mouse_x > start_x * (screen_width / 1920.0) and mouse_x < end_x * (
-                screen_width / 1920.0) and mouse_y > start_y * (screen_height / 1080.0) and mouse_y < end_y * (
+        if mouse.x > start_x * (screen_width / 1920.0) and mouse.x < end_x * (
+                screen_width / 1920.0) and mouse.y > start_y * (screen_height / 1080.0) and mouse.y < end_y * (
                 screen_height / 1080.0):
             return True
         else:
@@ -203,8 +199,8 @@ def mousein(start_x, end_x, start_y, end_y):
 def is_longest_held(direction_held_time):
     global error
     try:
-        longest = max(leftarrow_held_time, rightarrow_held_time, uparrow_held_time, downarrow_held_time, a_held_time,
-                      d_held_time, w_held_time, s_held_time)
+        longest = max(keys.left_arrow.time_held, keys.right_arrow.time_held, keys.up_arrow.time_held, keys.down_arrow.time_held, keys.a.time_held,
+                      keys.d.time_held, keys.w.time_held, keys.s.time_held)
         if direction_held_time == longest:
             return True
         else:
@@ -347,7 +343,7 @@ def display_loot():
     try:
         global loot, current_loot_slot
 
-        if escape or backspace:
+        if keys.escape or keys.backspace:
             return False
 
         screen.blit(loot_images["loot" + str(current_loot_slot)], (0, 0))
@@ -358,15 +354,15 @@ def display_loot():
 
         screen.blit(loot_images["controls"], (0, 0))
 
-        if (uparrow or w) and current_loot_slot > 0:
+        if (keys.up_arrow or keys.w) and current_loot_slot > 0:
             current_loot_slot -= 1
-        if (downarrow or s) and current_loot_slot < 5:
+        if (keys.down_arrow or keys.s) and current_loot_slot < 5:
             current_loot_slot += 1
 
-        if enter and loot[current_loot_slot] != "":
+        if keys.enter and loot[current_loot_slot] != "":
             inventory.append(loot[current_loot_slot])
             loot[current_loot_slot] = ""
-        if e:
+        if keys.e:
             for item in loot:
                 if item != "":
                     inventory.append(item)
@@ -424,7 +420,7 @@ def display_dialogue(character, dialogue_number):
     try:
         screen.blit(dialogue[character + "box"], (0, 0))
         screen.blit(dialogue[character + str(dialogue_number)], (765, 895))
-        if space or enter or numpadenter:
+        if keys.space or keys.enter or keys.numpadenter:
             return False
         return True
     except Exception as error:
@@ -554,8 +550,8 @@ def deletesave(savefile):
 
 ### ---------- CLASS DEFINING - START ---------- ###
 
-class Menu(object):
-    def __init__(self, name, permanent, options, coordinates, actions, escape_action, settings=[]):
+class Menu:
+    def __init__(self, name, permanent, options, coordinates, actions, escape_action, settings=None):
         self.name = name
         self.background = load("menus/" + self.name + "/background.png")
         self.permanent = [load("menus/" + self.name + "/" + item + ".png") for item in permanent] # A list of all the different thing in the menu that are always shown
@@ -568,7 +564,7 @@ class Menu(object):
                 self.sliders.append([False])
         self.options = [[load("menus/" + self.name + "/" + setting + ".png") for setting in option] for option in options] # A list of all the different options that the user can select in the menu
         self.settings = settings    # Shows which setting each option is currently on
-        if not self.settings:
+        if self.settings is None:
             self.settings = [0 for option in range(len(options))]
         self.coordinates = coordinates  # The screen coordinates of each option in the permananent list above (for 1920x1080; this is adjusted for other resolutions)
         self.actions = actions  # The new value for current that each option leads to when its clicked
@@ -607,9 +603,9 @@ class Menu(object):
                     self.current_selection = index
                     return
             
-            if (uparrow or w) and self.current_selection > 0:
+            if (keys.up_arrow or keys.w) and self.current_selection > 0:
                 self.current_selection -= 1
-            if (downarrow or s) and self.current_selection < len(self.options) - 1:
+            if (keys.down_arrow or keys.s) and self.current_selection < len(self.options) - 1:
                 self.current_selection += 1
         except Exception as error:
             log(error, "Failed to change menu selection in " + self.name + " menu")
@@ -617,10 +613,10 @@ class Menu(object):
     def change_settings(self):
         global error
         try:
-            if left_held:
+            if mouse.left.is_pressed:
                 global movement_started
                 if not movement_started:
-                    self.original_x = mouse_x
+                    self.original_x = mouse.x
                     slider_selected = False
                     for index in range(len(self.options)):
                         if mousein(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
@@ -631,22 +627,22 @@ class Menu(object):
                         return
                     movement_started = True
                 else:
-                    if self.settings[self.current_selection] + mouse_x - self.original_x < 0:
+                    if self.settings[self.current_selection] + mouse.x - self.original_x < 0:
                         self.settings[self.current_selection] = 0
-                    elif self.settings[self.current_selection] + mouse_x - self.original_x > 100:
+                    elif self.settings[self.current_selection] + mouse.x - self.original_x > 100:
                         self.settings[self.current_selection] = 100
                     else:
-                        self.settings[self.current_selection] = mouse_x - self.original_x
+                        self.settings[self.current_selection] = mouse.x - self.original_x
                             
             elif self.sliders[self.current_selection][0]:
-                if (leftarrow or leftarrow_held or a or a_held) and self.settings[self.current_selection] > 0:
+                if (keys.left_arrow or keys.left_arrow.is_pressed or keys.a or keys.a.is_pressed) and self.settings[self.current_selection] > 0:
                     self.settings[self.current_selection] -= 1
-                if (rightarrow or rightarrow_held or d or d_held) and self.settings[self.current_selection] < 100:
+                if (keys.right_arrow or keys.right_arrow.is_pressed or keys.d or keys.d.is_pressed) and self.settings[self.current_selection] < 100:
                     self.settings[self.current_selection] += 1
             else:
-                if (leftarrow or a) and self.settings[self.current_selection] > 0:
+                if (keys.left_arrow or keys.a) and self.settings[self.current_selection] > 0:
                     self.settings[self.current_selection] -= 1
-                if (rightarrow or d) and self.settings[self.current_selection] < len(self.options[self.current_selection]) - 1:
+                if (keys.right_arrow or keys.d) and self.settings[self.current_selection] < len(self.options[self.current_selection]) - 1:
                     self.settings[self.current_selection] += 1
         except Exception as error:
             log(error, "Failed to change option setting in " + self.name + " menu")
@@ -657,7 +653,7 @@ class Menu(object):
         global error
         global current
         try:
-            if left or space or space or enter or numpadenter:
+            if mouse.left or keys.space or keys.enter or keys.numpadenter:
                 current = self.actions[self.current_selection]
                 return True
         except Exception as error:
@@ -667,7 +663,7 @@ class Menu(object):
         global error
         global current
         try:
-            if escape:
+            if keys.escape:
                 current = self.escape_action
         except Exception as error:
             log(error, "Failed to check escape")
@@ -735,8 +731,7 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
                     
         except Exception as error:
             log(error, "Failed to change character's (" + self.name + ") coordinates")
-    
-    
+
     def check_death(self):
         if self.current_life <= 0:
             self.alive = False
@@ -770,7 +765,7 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
                 self.ability_frame = 0
             return selected_image
         else:
-            return self.frames[str((self.movement_cooldown*(len(self.frames)-1)*self.movespeed + (3*fps) - 1 + int((leftarrow_held or rightarrow_held or uparrow_held or downarrow_held or a_held or d_held or w_held or s_held) and not(self.movement_cooldown == (3*fps)/self.movespeed)))/(3*fps))][self.orientation]
+            return self.frames[str(int((self.movement_cooldown*(len(self.frames)-1)*self.movespeed + (3*fps) - 1 + int((keys.left_arrow.is_pressed or keys.right_arrow.is_pressed or keys.up_arrow.is_pressed or keys.down_arrow.is_pressed or keys.a.is_pressed or keys.d.is_pressed or keys.w.is_pressed or keys.s.is_pressed) and not(self.movement_cooldown == (3*fps)/self.movespeed)))/(3*fps)))][self.orientation]
     
     # Changes the character's image to reflect the character's current disposition
     def change_image(self):
@@ -792,13 +787,13 @@ class Player(Character):
         global error
         try:
             if not self.movement_cooldown:
-                if leftarrow or a:
+                if keys.left_arrow or keys.a:
                     self.orientation = "left"
-                if rightarrow or d:
+                if keys.right_arrow or keys.d:
                     self.orientation = "right"
-                if uparrow or w:
+                if keys.up_arrow or keys.w:
                     self.orientation = "up"
-                if downarrow or s:
+                if keys.down_arrow or keys.s:
                     self.orientation = "down"
         except Exception as error:
             log(error, "Failed to change player's (" + self.name + ") orientation") 
@@ -809,13 +804,13 @@ class Player(Character):
         try:            
             if self.movement_cooldown: # decrementing self.movement cooldown if it is not equal to 0
                 self.movement_cooldown -= 1
-            elif ((leftarrow_held_time > 1 or a_held_time > 1) or ((leftarrow_held_time or a_held_time) and self.orientation == "left")) and (is_longest_held(leftarrow_held_time) or is_longest_held(a_held_time)):
+            elif ((keys.left_arrow.time_held > 1 or keys.a.time_held > 1) or ((keys.left_arrow.time_held or keys.a.time_held) and self.orientation == "left")) and (is_longest_held(keys.left_arrow.time_held) or is_longest_held(keys.a.time_held)):
                 self.move(room, "left")
-            elif ((rightarrow_held_time > 1 or d_held_time > 1) or ((rightarrow_held_time or d_held_time) and self.orientation == "right")) and (is_longest_held(rightarrow_held_time) or is_longest_held(d_held_time)):
+            elif ((keys.right_arrow.time_held > 1 or keys.d.time_held > 1) or ((keys.right_arrow.time_held or keys.d.time_held) and self.orientation == "right")) and (is_longest_held(keys.right_arrow.time_held) or is_longest_held(keys.d.time_held)):
                 self.move(room, "right")
-            elif ((uparrow_held_time > 1 or w_held_time > 1) or ((uparrow_held_time or w_held_time) and self.orientation == "up")) and (is_longest_held(uparrow_held_time) or is_longest_held(w_held_time)):
+            elif ((keys.up_arrow.time_held > 1 or keys.w.time_held > 1) or ((keys.up_arrow.time_held or keys.w.time_held) and self.orientation == "up")) and (is_longest_held(keys.up_arrow.time_held) or is_longest_held(keys.w.time_held)):
                 self.move(room, "up")
-            elif ((downarrow_held_time > 1 or s_held_time > 1) or ((downarrow_held_time or s_held_time) and self.orientation == "down")) and (is_longest_held(downarrow_held_time) or is_longest_held(s_held_time)):
+            elif ((keys.down_arrow.time_held > 1 or keys.s.time_held > 1) or ((keys.down_arrow.time_held or keys.s.time_held) and self.orientation == "down")) and (is_longest_held(keys.down_arrow.time_held) or is_longest_held(keys.s.time_held)):
                 self.move(room, "down")
         except Exception as error:
             log(error, "Failed to change player's (" + self.name + ") position")
@@ -1467,7 +1462,7 @@ try:    # loading images for extras into a dictionary so they only have to be lo
         # Room 3
         "room3/platform":load("room3/platform.png")
     }
-    
+
     # Loading dialogue images
     dialogue = {
         "mysteriousbox":load("dialogue/mysteriousbox.png"),
@@ -1492,7 +1487,7 @@ try:    # loading images for extras into a dictionary so they only have to be lo
         "zaal3":load("dialogue/zaal3.png"),
         "zaal4":load("dialogue/zaal4.png"),
     }
-    
+
     # Loading ability images
     ability_images = {
         "firebolt":
@@ -1505,7 +1500,7 @@ try:    # loading images for extras into a dictionary so they only have to be lo
                 }
             }
     }
-    
+
     # Loading death images
     death_images = {
         "Vincent Slime":[load("vincent/slime/death" + str(n) + ".png") for n in range(12)],
@@ -1513,7 +1508,7 @@ try:    # loading images for extras into a dictionary so they only have to be lo
                 "Firebolt":[{direction:load("firebolt/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(8)],
                     "Inferno":[{direction:load("inferno/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(11)],
     }
-    
+
     # Loading loot images:
     loot_images = {
         "controls":load("loot/controls.png"),
@@ -1525,18 +1520,18 @@ try:    # loading images for extras into a dictionary so they only have to be lo
         "loot5":load("loot/loot5.png"),
         "slime_chunk":load("loot/slime_chunk.png")
     }
-        
-    
+
+
     # Loading tutorial images
     tutorial = [load("tutorial/tutorial" + str(n) + ".png") for n in range(13)]
-    
+
     # Loading spellbook images
     spellbook_images = {
         "spellbook_default":load("spellbook/spellbook_default.png"),
         "firebolt_uncharged":load("spellbook/firebolt_uncharged.png"),
         "firebolt1":load("spellbook/firebolt1.png")
         }
-    
+
     # Loading hud images
     hud_images = {
         "hud":load("hud/hud.png"),
@@ -1547,10 +1542,10 @@ try:    # loading images for extras into a dictionary so they only have to be lo
         "firebolt_cooldown":load("hud/firebolt_cooldown.png"),
         "slime_chunk":load("hud/slime_chunk.png")
     }
-    
+
     # Loading level up images
     levelup_images = [load("levelup/" + str(n) + ".png") for n in range(15)]
-    
+
     # Loading zaal images
     zaal_images = {
         "health_back":load("zaal/health_back.png"),
@@ -1559,8 +1554,8 @@ try:    # loading images for extras into a dictionary so they only have to be lo
         "death":[load("zaal/death" + str(n) + ".png") for n in range(12)],
             "zaal":[load("zaal/zaal" + str(n) + ".png") for n in range(2)],
                 "attack":[load("zaal/attack" + str(n) + ".png") for n in range(19)]
-                
-            
+
+
     }
     
     credits_images = [pygame.image.load(file_directory + "Image Files/credits/credits" + str(n) + ".png").convert() for n in range(8)]
@@ -1773,7 +1768,7 @@ while ongoing:
     except Exception as error:
         log(error, "Failed to update game run duration")
 
-    mouse.reset()
+    mouse.reset_buttons()
     mouse.update_coordinates()
     keys.reset()
 
@@ -1790,7 +1785,7 @@ while ongoing:
                 keys.process_key_down(event)
                 if accepting_text:
                     key_pressed = event.key # Assigning the last pressed key to a variable for accepting text
-                    input_text += add_character()
+                    # input_text += add_character()
             elif event.type == pygame.KEYUP:
                 keys.process_key_up(event)
                 
@@ -1805,7 +1800,7 @@ while ongoing:
             
     elif introduction.get_busy():   # Checking to see that the introduction video hasn't stopped playing for whatever reason
         try:
-            if escape or space or enter or numpadenter:
+            if keys.escape or keys.space or keys.enter or keys.numpadenter:
                 introduction.stop()
         except Exception as error:
             log(error, "Failed to display introduction")
@@ -1831,7 +1826,7 @@ while ongoing:
             screen.blit(controls_page, (0,0))
             screen.blit(esc_exit, (0,0))
             
-            if escape or backspace:
+            if keys.escape or keys.backspace:
                 current = "main menu"
                 
         elif current[0:4] == "save":
@@ -1873,7 +1868,7 @@ while ongoing:
                 elif cutscene_time < 10017:
                     current_room.display_room(vincent[form])
                     screen.blit(tutorial[0], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 10017
                 else:
                     cutscene0_played = True
@@ -1961,7 +1956,7 @@ while ongoing:
                 elif cutscene_time < 10002:
                     sound_playing = False
                     screen.blit(tutorial[1], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 10002
                 else:
                     cutscene2_played = True
@@ -1973,39 +1968,39 @@ while ongoing:
                 if cutscene_time < 10000:
                     display_spellbook()
                     screen.blit(tutorial[2], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 10000
                 elif cutscene_time < 20000:
                     display_hud()
                     screen.blit(hud_images["firebolt"], (760, 1029))
                     display_spellbook()
-                    if escape or backspace:
+                    if keys.escape or keys.backspace:
                         cutscene_start_time = current_time - 20000
                 elif cutscene_time < 30000:
                     screen.blit(tutorial[3], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 30000
                 elif cutscene_time < 40000:
                     screen.blit(tutorial[4], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 40000
                 elif cutscene_time < 50000:
                     screen.blit(tutorial[5], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 50000
                 elif cutscene_time < 60000:
                     screen.blit(tutorial[6], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 60000
                 elif cutscene_time < 70000:
                     screen.blit(tutorial[7], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 70000
                 elif cutscene_time < 80000:
                     display_hud()                    
                     screen.blit(hud_images["firebolt"], (760, 1029))
                     screen.blit(tutorial[8], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 80000
                 else:
                     display_hud()
@@ -2024,7 +2019,7 @@ while ongoing:
                         cutscene_start_time = current_time - 25
                 elif cutscene_time < 10025:
                     screen.blit(tutorial[9], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 10025
                 else:
                     vincent[form].exp += 35
@@ -2040,7 +2035,7 @@ while ongoing:
                 current_room.display_room(vincent[form])
                 if cutscene_time < 10000:
                     screen.blit(tutorial[10], (0,0))
-                    if space or enter or numpadenter:
+                    if keys.space or keys.enter or keys.numpadenter:
                         cutscene_start_time = current_time - 10000
                 else:
                     cutscene5_played = True
@@ -2193,7 +2188,7 @@ while ongoing:
                     screen.blit(credits_images[6], (0,0))
                 else:
                     screen.blit(credits_images[6], (0,0))
-                    if space or enter or numpadenter:                        
+                    if keys.space or keys.enter or keys.numpadenter:                        
                         cutscene_playing = False
                         current = "main menu" #(maybe), prolly go to credits isnt it
         
@@ -2287,7 +2282,7 @@ while ongoing:
                     if display_loot_menu:
                         if not display_loot():
                             display_loot_menu = False
-                    elif escape and not show_spellbook:    # Opening the in game options menu upon escape being pressed
+                    elif keys.escape and not show_spellbook:    # Opening the in game options menu upon escape being pressed
                         current = "in game options menu"  
                             
                     if show_hud:
@@ -2305,12 +2300,12 @@ while ongoing:
                         display_spellbook()
                         if mousein(748,825,499,576):
                             screen.blit(tutorial[12], (0,0))
-                            if left and cutscene5_played and not cutscene6_played and vincent[form].skill_points > 0:
+                            if mouse.left and cutscene5_played and not cutscene6_played and vincent[form].skill_points > 0:
                                 vincent[form].skill_points -= 1
                                 cutscene6_played = True
                         elif mousein(579,656,428,505):
                             screen.blit(tutorial[11], (0,0))
-                        if escape or backspace:
+                        if keys.escape or keys.backspace:
                             show_spellbook = False
                     
                     if vincent[form].exp >= 100 and not levelling_up:
@@ -2347,10 +2342,10 @@ while ongoing:
                         mean_slime.position = (-10,-10)
                         
                     
-                    if tab and not show_spellbook:
+                    if keys.tab and not show_spellbook:
                         show_spellbook = True
                     
-                    if e:
+                    if keys.e:
                         if not cutscene3_played:
                             if is_interactable((46,20)):
                                 current_room.extras.remove(book_item)
@@ -2378,10 +2373,10 @@ while ongoing:
                         cutscene_start_time = current_time
                         current = "cutscene7"                                                 
      
-                    if one or numpad1:
+                    if keys.one or keys.numpad1:
                         firebolt.use(vincent[form])
                     
-                    if r and cutscene4_played and not slime_portal in rooms[2].extras:  # Creating a portal
+                    if keys.r and cutscene4_played and not slime_portal in rooms[2].extras:  # Creating a portal
                         if vincent[form].orientation == "left" and not (vincent[form].position[0]-1, vincent[form].position[1]) in (current_room.blocked + [(104,25)]) and not vincent[form].position[0]-1 < 0:
                             portal_x = vincent[form].position[0]-1
                             portal_y = vincent[form].position[1]                       
@@ -2434,4 +2429,3 @@ try:
     save_game(save_number)
 except Exception as error:
     log(error, "Game was unable to autosave on exit")
-                                         
