@@ -668,7 +668,7 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
         self.name = name    # Character's name
         self.x = 0  # Character's screen x coordinate
         self.y = 0  # Character's screen y coordinate
-        self.frames = {str(frame): {direction: load(self.name.lower().replace(" ", "/") + "/" + direction + str(frame) + ".png") for direction in ["left","up","right","down"]} for frame in range(frames)} #frames # The number of frames in the character's movement animation. The attribute "frames" becomes a dictionary of all the images during initialisation.
+        self.frames = {frame: {direction: load(self.name.lower().replace(" ", "/") + "/" + direction + str(frame) + ".png") for direction in ["left","up","right","down"]} for frame in range(frames)} #frames # The number of frames in the character's movement animation. The attribute "frames" becomes a dictionary of all the images during initialisation.
         self.position = position    # Character's grid position
         self.orientation = orientation  # The direction in which the character is facing
         self.movespeed = movespeed  # Character's movement speed. Should divide 3*fps (currently 90). Definitely should NOT be 90 or even near it. Also the 3*fps value may need changing.
@@ -698,25 +698,25 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
                     and (self.position[0] > 0 or self.position[0]-1 in [exit.coordinates[0] for exit in room.exits if exit.coordinates[1] == self.position[1]])):
                     self.orientation = "left"
                     self.position = (self.position[0] - 1, self.position[1])
-                    self.movement_cooldown = (3*fps)/self.movespeed
+                    self.movement_cooldown = (3*fps)//self.movespeed
                     return True
                 elif (direction == "right" and (not (self.position[0] + 1, self.position[1]) in room.blocked)
                       and (self.position[0] < room.max_coord[0] or self.position[0]+1 in [exit.coordinates[0] for exit in room.exits if exit.coordinates[1] == self.position[1]])):
                     self.orientation = "right"
                     self.position = (self.position[0] + 1, self.position[1])
-                    self.movement_cooldown = (3*fps)/self.movespeed
+                    self.movement_cooldown = (3*fps)//self.movespeed
                     return True
                 elif (direction == "up" and (not (self.position[0], self.position[1] - 1) in room.blocked)
                       and (self.position[1] > 0 or self.position[1]-1 in [exit.coordinates[1] for exit in room.exits if exit.coordinates[0] == self.position[0]])):
                     self.orientation = "up"
                     self.position = (self.position[0], self.position[1] - 1)
-                    self.movement_cooldown = (3*fps)/self.movespeed
+                    self.movement_cooldown = (3*fps)//self.movespeed
                     return True
                 elif (direction == "down" and (not (self.position[0], self.position[1] + 1) in room.blocked)
                       and (self.position[1] < room.max_coord[1] or self.position[1]+1 in [exit.coordinates[1] for exit in room.exits if exit.coordinates[0] == self.position[0]])):
                     self.orientation = "down"
                     self.position = (self.position[0], self.position[1] + 1)
-                    self.movement_cooldown = (3*fps)/self.movespeed
+                    self.movement_cooldown = (3*fps)//self.movespeed
                     return True
                 else:
                     self.orientation = direction
@@ -758,7 +758,12 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
                 self.ability_frame = 0
             return selected_image
         else:
-            return self.frames[str(int((self.movement_cooldown*(len(self.frames)-1)*self.movespeed + (3*fps) - 1 + int((keys.left_arrow.is_pressed or keys.right_arrow.is_pressed or keys.up_arrow.is_pressed or keys.down_arrow.is_pressed or keys.a.is_pressed or keys.d.is_pressed or keys.w.is_pressed or keys.s.is_pressed) and not(self.movement_cooldown == (3*fps)/self.movespeed)))/(3*fps)))][self.orientation]
+            return self.frames[(self.movement_cooldown * (len(self.frames)-1) * self.movespeed + (3*fps) - 1 +
+                                int((keys.left_arrow.is_pressed or keys.right_arrow.is_pressed or
+                                     keys.up_arrow.is_pressed or keys.down_arrow.is_pressed or
+                                     keys.a.is_pressed or keys.d.is_pressed or
+                                     keys.w.is_pressed or keys.s.is_pressed)
+                                and not(self.movement_cooldown == (3*fps)//self.movespeed)))//(3*fps)][self.orientation]
     
     # Changes the character's image to reflect the character's current disposition
     def change_image(self):
@@ -852,7 +857,7 @@ class Npc(Character):
                 self.movement_cooldown -= 1
             elif len(self.moves) != 0:
                 self.move(room, self.moves[0])
-                if self.movement_cooldown == (3*fps)/self.movespeed: # Deleting the current move after the movement command has been issued
+                if self.movement_cooldown == (3*fps)//self.movespeed: # Deleting the current move after the movement command has been issued
                     del self.moves[0]
         except Exception as error:
             log(error, "Failed to change NPC's (" + self.name + ") position")
@@ -1045,7 +1050,7 @@ class Ability(Character):
             elif len(self.moves) != 0:                
                 if not self.move(room, self.moves[0]):
                     self.alive = False
-                if self.movement_cooldown == (3*fps)/self.movespeed: # Deleting the current move after the movement command has been issued
+                if self.movement_cooldown == (3*fps)//self.movespeed: # Deleting the current move after the movement command has been issued
                     del self.moves[0]
         except Exception as error:
             log(error, "Failed to change ability's (" + self.name + ") position")
@@ -1106,17 +1111,9 @@ class Extra(object):
             global error
             try:
                 # Checking if the player is within the coordinates at which the extra should be displayed
-                if self.start_x == "all" and self.end_x == "all" and self.start_y == "all" and self.end_y == "all":
-                    show_extra = True
-                elif self.start_x == "all" and self.end_x == "all" and player.position[1] >= self.start_y and player.position[1] <= self.end_y:
-                    show_extra = True
-                elif self.start_y == "all" and self.end_y == "all" and player.position[0] >= self.start_x and player.position[0] <= self.end_x:
-                    show_extra = True
-                elif (player.position[0] >= self.start_x and player.position[0] <= self.end_x
-                        and player.position[1] >= self.start_y and player.position[1] <= self.end_y):   
-                        show_extra = True
-                else:
-                    show_extra = False                
+                in_x = (self.start_x == "all" and self.end_x == "all") or self.start_x <= player.position[0] <= self.end_x
+                in_y = (self.start_y == "all" and self.end_y == "all") or self.start_y <= player.position[1] <= self.end_y
+                show_extra = in_x and in_y
                 
                 if self.scroll_speed != 0:   # Changing the position of images that should scroll
                     if self.scroll_axis == "x":
@@ -1244,7 +1241,7 @@ class Room(object):
                 if npc.room == self.number and not npc.dead:   # Only displaying npcs that are in the current room
                     self.display_npc(npc)
             screen.blit(player.image, (player.x,player.y))  # Displaying the player last, so they are always on top
-            for name, ability in abilities.iteritems():
+            for name, ability in abilities.items():
                 if ability.room == self.number and ability.displayed:
                     self.display_npc(ability)
             
@@ -2365,7 +2362,7 @@ while ongoing:
                         cutscene_start_time = current_time
                         current = "cutscene7"                                                 
      
-                    if keys.one or keys.numpad1:
+                    if keys.one or keys.numpad_one:
                         firebolt.use(vincent[form])
                     
                     if keys.r and cutscene4_played and not slime_portal in rooms[2].extras:  # Creating a portal
