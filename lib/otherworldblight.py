@@ -2,6 +2,7 @@ import ctypes
 
 from lib.keys import Keys
 from lib.mouse import Mouse
+from lib.music import Music, Audio
 
 import moviepy
 from moviepy.editor import VideoFileClip
@@ -74,15 +75,6 @@ show_hud = False
 show_spellbook = False
 levelling_up = False
 levelup_frame = 0
-music_playing = False
-sound_playing = False
-master_volume = 1
-sfx_volume = 1
-music_volume = 1
-voice_volume = 1
-volumes = {"sfx":sfx_volume,
-           "music":music_volume,
-           "voice":voice_volume}
 cutscene_playing = False
 movement_started = False
 #display_options = False
@@ -140,6 +132,7 @@ pygame.display.set_icon(load("game_icon.png"))   # Setting the icon for the game
 
 keys = Keys()
 mouse = Mouse()
+music = Music()
 
 ### ---------- FUNCTION DEFINING - START ---------- ###
 
@@ -332,28 +325,6 @@ def display_dialogue(character, dialogue_number):
     if keys.space or keys.enter or keys.numpad_enter:
         return False
     return True
-
-
-# Defining a function to start the playing of music
-def play_music(name, music_type, multiplier=1, loops=-1):
-    """sound_type = \"sfx\", \"music\", \"voice\""""
-    global music_playing
-    pygame.mixer.music.stop()
-    music_playing = True
-    load(name + ".ogg")
-    pygame.mixer.music.set_volume(multiplier * master_volume * volumes[music_type])
-    pygame.mixer.music.play(loops)
-
-
-# Defining a function to start the playing of sound effects
-def play_sound(name, sound_type, multiplier=1.0, loops=0):
-    """sound_type = \"sfx\", \"music\", \"voice\""""
-    global sound_playing
-    sound_playing = True
-    sound = pygame.mixer.Sound("../Sound Files/" + name + ".ogg")
-    sounds.append(sound)
-    sound.set_volume(multiplier * master_volume * volumes[sound_type])
-    sound.play(loops)
 
 
 # Defining a function to load a save file
@@ -679,15 +650,12 @@ class Player(Character):
                     self.join(exit.room, exit.position)
     
     def join(self, room, position):
-        global current_room, sound_playing
-        for sound in sounds:
-            sound.stop()
-        sound_playing = False
+        global current_room
+        music.sound.stop()
         current_room = rooms[room]
         self.room = room
         if room == 0:
-            play_sound("portal", "sfx", 0.1, -1)
-            sound_playing = True
+            music.sound.play(Audio("portal.ogg", 0.1), loop=-1)
         self.position = position
 
         
@@ -827,8 +795,7 @@ class Ability(Character):
                 self.cooldown = fps*self.max_cooldown
         elif self.dead and zaal_animation == -1 and player.position in [(x,y) for y in range(4,15) for x in range(10,13)]+[(x,y) for y in range(2,4) for x in range(10)]+[(x,y) for y in range(2) for x in range(10,13)]+[(x,y) for y in range(2,4) for x in range(13,20)]:
             zaal_animation = 18
-            global sound_playing
-            play_sound("zaalattack", "sfx", 0.2)
+            music.sound.play(Audio("zaalattack.ogg", 0.2))
         
     
     def cast(self, player):
@@ -847,7 +814,6 @@ class Ability(Character):
                 self.position = (player.position[0], player.position[1] + 1)
             self.moves = [player.orientation for distance in range(self.max_range)]
         elif zaal_animation == 0:
-            sound_playing = False
             self.alive = True
             self.dead = False        
             self.displayed = True 
@@ -1374,7 +1340,6 @@ introduction = load("introduction.mpg")
 current = "main menu"
 npcs = [] # A list of all currently loaded npcs. All Npc objects are appended to this list when they are initialised.
 abilities = {}  # A dictionary of all currently loaded abilities
-sounds = [] # A list of sounds that are currently playing
 loot = ["" for nothing in range(6)]   # A list of loot that is currently available in the loot pile
 spells = [] # The characters unlocked spells
 inventory = [] # The characters inventory
@@ -1582,10 +1547,10 @@ while ongoing:
             if not menus[current].check_action():
                 menus[current].check_escape()
             # Changing the volume levels according to what the option menu says
-            master_volume = 0.01*menus["options menu"].settings[0]
-            sfx_volume = 0.01*menus["options menu"].settings[1]
-            music_volume = 0.01*menus["options menu"].settings[2]
-            voice_volume = 0.01*menus["options menu"].settings[3]
+            music.master_volume = menus["options menu"].settings[0]
+            music.sound_volume = menus["options menu"].settings[1]
+            music.music_volume = menus["options menu"].settings[2]
+            music.voice_volume = menus["options menu"].settings[3]
                 
         elif current == "controls":
             screen.blit(menus["main menu"].background, (0,0))
@@ -1608,26 +1573,24 @@ while ongoing:
                 if cutscene_time < 3:
                     screen.fill((0,0,0))
                 elif cutscene_time < 5:
-                    if not sound_playing:
-                        play_sound("thunder", "sfx")
-                        play_sound("portal", "sfx", 0.1, -1)
+                    if not music.sound.is_playing:
+                        music.sound.play(Audio("thunder.ogg"))
+                        music.sound.play(Audio("portal.ogg", 0.1), loop=-1)
                     screen.fill((0,0,0))
                     portal.display(current_room, vincent[form])
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-3))))
                     screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10:
-                    sound_playing = False 
                     portal.display(current_room, vincent[form])
                     if not display_dialogue("vincent", 0):
                         cutscene_start_time = current_time - 10
                 elif cutscene_time < 12:
-                    if not sound_playing:
-                        play_sound("thunder", "sfx")
+                    if not music.sound.is_playing:
+                        music.sound.play(Audio("thunder.ogg"))
                     current_room.display_room(vincent[form])
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-10))))
                     screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 17:
-                    sound_playing = False
                     current_room.display_room(vincent[form])
                     if not display_dialogue("vincent", 1):
                         cutscene_start_time = current_time - 17
@@ -1669,8 +1632,8 @@ while ongoing:
                     star.display(current_room, vincent[form])
                     screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
                     current_room.extras[5].display(current_room, vincent[form])
-                    if cutscene_time > 61 and not sound_playing:
-                        play_sound("transform", "sfx")
+                    if cutscene_time > 61 and not music.sound.is_playing:
+                        music.sound.play(Audio("transform.ogg"))
                 elif cutscene_time < 63.7:                
                     star.display(current_room, vincent[form])
                     screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
@@ -1688,7 +1651,6 @@ while ongoing:
                     fade_screen.fill((151, 0, 0, int(255*(1-0.5*(cutscene_time-64)))))
                     screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 76:
-                    sound_playing = False
                     if not display_dialogue("mysterious", 0):
                         cutscene_start_time = current_time - 76
                 elif cutscene_time < 86:
@@ -1704,7 +1666,7 @@ while ongoing:
                     if not display_dialogue("mysterious", 0):
                         cutscene_start_time = current_time - 116
                 else:
-                    play_music("main", "music", 0.5)
+                    music.music.play(Audio("main.ogg", 0.5))
                     coordinates_set = False
                     cutscene1_played = True
                     cutscene_playing = False
@@ -1713,14 +1675,13 @@ while ongoing:
             elif current[8] == "2":
                 current_room.display_room(vincent[form])
                 if cutscene_time < 2:
-                    if not sound_playing:
-                        play_sound("thunder", "sfx")
+                    if not music.sound.is_playing:
+                        music.sound.play(Audio("thunder.ogg"))
                         current_room.extras.append(book_item)
                         current_room.extras.append(book_light)
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
                     screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10002:
-                    sound_playing = False
                     screen.blit(tutorial[1], (0,0))
                     if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 10002
@@ -1812,9 +1773,9 @@ while ongoing:
                 current_room.display_room(vincent[form])
                 firebolt.exist(current_room)
                 if cutscene_time < 2:
-                    if not sound_playing:
-                        play_sound("thunder", "sfx")
-                        play_sound("portal", "sfx", 0.1, -1)
+                    if not music.sound.is_playing:
+                        music.sound.play(Audio("thunder.ogg"))
+                        music.sound.play(Audio("portal.ogg", 0.1), loop=-1)
                         current_room.extras.remove(slime_portal)
                         current_room.extras.remove(placed_portal)
                         current_room.extras.append(portal_burn)
@@ -1830,7 +1791,6 @@ while ongoing:
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
                     screen.blit(fade_screen, (0,0))
                 else:
-                    sound_playing = False
                     cutscene7_played = True
                     cutscene_playing = False
                     current = "in game"
@@ -1839,8 +1799,8 @@ while ongoing:
                 current_room.display_room(vincent[form])                
                 screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
                 if cutscene_time < 2:
-                    if not sound_playing:
-                        play_sound("thunder", "sfx")                            
+                    if not music.sound.is_playing:
+                        music.sound.play(Audio("thunder.ogg"))
                     fade_screen.fill((255, 255, 255, int(255*(1-0.5*cutscene_time))))
                     screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10:                    
@@ -1868,7 +1828,7 @@ while ongoing:
                     if not display_dialogue("zaal", 4):
                         cutscene_start_time = current_time - 125
                 else:
-                    play_music("boss", "music", 0.5)
+                    music.music.play(Audio("boss.ogg", 0.5))
                     firebolt.room = 3
                     cutscene8_played = True
                     cutscene_playing = False
@@ -1877,8 +1837,8 @@ while ongoing:
             elif current[8] == "9":
                 current_room.display_room(vincent[form])
                 if cutscene_time < 2:
-                    if not sound_playing:
-                        play_sound("thunder", "sfx")                            
+                    if not music.sound.is_playing:
+                        music.sound.play(Audio("thunder.ogg"))
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
                     screen.blit(fade_screen, (0,0))
                 else:
@@ -1956,7 +1916,8 @@ while ongoing:
                     screen.blit(credits_images[6], (0,0))
                     if keys.space or keys.enter or keys.numpad_enter:                        
                         cutscene_playing = False
-                        current = "main menu" #(maybe), prolly go to credits isnt it
+                        music.stop()
+                        current = "main menu"   #(maybe), prolly go to credits isnt it
         
         elif current == "dead":
             cutscene_time = current_time - cutscene_start_time
@@ -2027,7 +1988,6 @@ while ongoing:
                     screen.blit(zaal_images["health_back"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)))
                     screen.blit(zaal_images["health"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)), (0,0,zaal_life,52))
                     screen.blit(zaal_images["health_icon"], (1786,0))
-
 
                     if firebolt.position in [(10,2), (11,2), (12,2), (10,3), (11,3), (12,3)] and firebolt.alive:
                         damage_dealt = int(firebolt.damage*(0.9 + 0.2*random.random()))
@@ -2106,7 +2066,6 @@ while ongoing:
                     current_room.extras.remove(drop)
                     mean_slime.position = (-10,-10)
 
-
                 if keys.tab and not show_spellbook:
                     show_spellbook = True
 
@@ -2162,29 +2121,26 @@ while ongoing:
                         portal_x = vincent[form].position[0]
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
-
-
             
         elif current == "exit":
             ongoing = False
     
-    ## Displaying an error message if requested
+    # Displaying an error message if requested
     try:
         if error_time > 0:
             error_time -= 1
             screen.blit(load("error_message.png"), (1320*(screen_width/1920.0), 0))
-    except:
+    except Exception as error:
         log(error, "Failed to display error message")
-
 
     frame += 1  # Incrementing the current frame
     pygame.display.flip()   # Updating the screen at the end of blitting
     clock.tick(fps)          # Setting fps limit
 
-### ---------- PROGRAM DISPLAY - END ---------- ###
-
-## Closing and saving the program
+# Closing and saving the program
 try:
     save_game(save_number)
 except NameError:
     pass
+
+pygame.quit()
