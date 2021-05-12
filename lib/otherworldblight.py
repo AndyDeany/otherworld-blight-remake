@@ -3,6 +3,9 @@ import ctypes
 from lib.keys import Keys
 from lib.mouse import Mouse
 
+import moviepy
+from moviepy.editor import VideoFileClip
+
 
 # Defining the error logging function
 def log(error, error_message):
@@ -19,7 +22,7 @@ def log(error, error_message):
 
     global ongoing              # Also temporary
     ongoing = False             # Also temporary
-    if pygame.display.get_surface() is not None and error_message != "Failed to display error message":
+    if False and pygame.display.get_surface() is not None and error_message != "Failed to display error message":
         error_time = 3*fps
     # add some error sound to play here
     else:   # Creating a window to inform the user that error has occurred
@@ -48,7 +51,7 @@ def load(file_name):
         elif file_type == "ogg":
             pygame.mixer.music.load(file_directory + "Sound Files\\" + file_name)
         elif file_type == "mpg":
-            return pygame._movie.Movie(file_directory + "Video Files\\" + file_name)
+            return VideoFileClip("../Video Files/" + file_name).subclip(0, 3)
         else:
             raise Exception("Invalid file type")
     except Exception as error:
@@ -59,14 +62,13 @@ def load(file_name):
         
 
 ### ---------- IMPORTING MODULES - START ---------- ###
-
-import pygame, os
-# os.environ["SDL_VIDEODRIVER"] = "windib"
+import os
+os.environ["SDL_VIDEODRIVER"] = "windib"
+import pygame
 pygame.init()
 
-import sys
 import datetime, time
-import math, random
+import random
 from operator import attrgetter
 
 ### ---------- IMPORTING MODULES - END ---------- ###
@@ -128,15 +130,6 @@ try:
 except Exception as error:
     log(error, "Unable to initialise essential game variables")
 
-# Keyboard inputs
-try:
-    accepting_text = False
-    input_text = ""
-    keys = Keys()
-    mouse = Mouse()
-except Exception as error:
-    log(error, "Failed to initialise keyboard input variabes")
-
 # Setting the screen resolution and creating the screen
 try:
     os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
@@ -173,6 +166,15 @@ try:
     pygame.display.set_icon(load("game_icon.png")) # Setting the icon for the game window    
 except Exception as error:
     log(error, "Failed to initialise the game window")
+
+# Keyboard inputs
+try:
+    accepting_text = False
+    input_text = ""
+    keys = Keys()
+    mouse = Mouse()
+except Exception as error:
+    log(error, "Failed to initialise keyboard input variabes")
 
 ### ---------- VARIABLE ASSIGNMENT - END ---------- ###
 
@@ -420,7 +422,7 @@ def display_dialogue(character, dialogue_number):
     try:
         screen.blit(dialogue[character + "box"], (0, 0))
         screen.blit(dialogue[character + str(dialogue_number)], (765, 895))
-        if keys.space or keys.enter or keys.numpadenter:
+        if keys.space or keys.enter or keys.numpad_enter:
             return False
         return True
     except Exception as error:
@@ -653,7 +655,7 @@ class Menu:
         global error
         global current
         try:
-            if mouse.left or keys.space or keys.enter or keys.numpadenter:
+            if mouse.left or keys.space or keys.enter or keys.numpad_enter:
                 current = self.actions[self.current_selection]
                 return True
         except Exception as error:
@@ -1558,7 +1560,7 @@ try:    # loading images for extras into a dictionary so they only have to be lo
 
     }
     
-    credits_images = [pygame.image.load(file_directory + "Image Files/credits/credits" + str(n) + ".png").convert() for n in range(8)]
+    credits_images = [load("credits/credits" + str(n) + ".png").convert() for n in range(8)]
     
     esc_exit = load("esc_exit.png")
     controls_page = load("controls.png")
@@ -1572,7 +1574,6 @@ except Exception as error:
 
 try:
     introduction = load("introduction.mpg")
-    introduction.set_display(screen)
 except Exception as error:
     log(error, "Failed to load video files")
 
@@ -1794,16 +1795,16 @@ while ongoing:
     ## Handling user inputs/Displaying the game
     if frame == 1:
         try:
-            introduction.play()
+            introduction.preview()
         except Exception as error:
             log(error, "Failed to start introduction")
-            
-    elif introduction.get_busy():   # Checking to see that the introduction video hasn't stopped playing for whatever reason
-        try:
-            if keys.escape or keys.space or keys.enter or keys.numpadenter:
-                introduction.stop()
-        except Exception as error:
-            log(error, "Failed to display introduction")
+
+    # elif introduction.get_busy():   # Checking to see that the introduction video hasn't stopped playing for whatever reason
+    #     try:
+    #         if keys.escape or keys.space or keys.enter or keys.numpad_enter:
+    #             introduction.stop()
+    #     except Exception as error:
+    #         log(error, "Failed to display introduction")
             
     else:
         if current[-4:] == "menu":
@@ -1868,7 +1869,7 @@ while ongoing:
                 elif cutscene_time < 10017:
                     current_room.display_room(vincent[form])
                     screen.blit(tutorial[0], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 10017
                 else:
                     cutscene0_played = True
@@ -1956,7 +1957,7 @@ while ongoing:
                 elif cutscene_time < 10002:
                     sound_playing = False
                     screen.blit(tutorial[1], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 10002
                 else:
                     cutscene2_played = True
@@ -1968,7 +1969,7 @@ while ongoing:
                 if cutscene_time < 10000:
                     display_spellbook()
                     screen.blit(tutorial[2], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 10000
                 elif cutscene_time < 20000:
                     display_hud()
@@ -1978,29 +1979,29 @@ while ongoing:
                         cutscene_start_time = current_time - 20000
                 elif cutscene_time < 30000:
                     screen.blit(tutorial[3], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 30000
                 elif cutscene_time < 40000:
                     screen.blit(tutorial[4], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 40000
                 elif cutscene_time < 50000:
                     screen.blit(tutorial[5], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 50000
                 elif cutscene_time < 60000:
                     screen.blit(tutorial[6], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 60000
                 elif cutscene_time < 70000:
                     screen.blit(tutorial[7], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 70000
                 elif cutscene_time < 80000:
                     display_hud()                    
                     screen.blit(hud_images["firebolt"], (760, 1029))
                     screen.blit(tutorial[8], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 80000
                 else:
                     display_hud()
@@ -2019,7 +2020,7 @@ while ongoing:
                         cutscene_start_time = current_time - 25
                 elif cutscene_time < 10025:
                     screen.blit(tutorial[9], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 10025
                 else:
                     vincent[form].exp += 35
@@ -2035,7 +2036,7 @@ while ongoing:
                 current_room.display_room(vincent[form])
                 if cutscene_time < 10000:
                     screen.blit(tutorial[10], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:
+                    if keys.space or keys.enter or keys.numpad_enter:
                         cutscene_start_time = current_time - 10000
                 else:
                     cutscene5_played = True
@@ -2188,7 +2189,7 @@ while ongoing:
                     screen.blit(credits_images[6], (0,0))
                 else:
                     screen.blit(credits_images[6], (0,0))
-                    if keys.space or keys.enter or keys.numpadenter:                        
+                    if keys.space or keys.enter or keys.numpad_enter:                        
                         cutscene_playing = False
                         current = "main menu" #(maybe), prolly go to credits isnt it
         

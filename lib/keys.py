@@ -47,6 +47,7 @@ class Keys:
         self.backspace = Key(8)
         self.enter = Key(13)
         self.escape = Key(27)
+        self.space = Key(32)
         self.numpad_enter = Key(1073741912)
 
         self.right_arrow = Key(1073741903)
