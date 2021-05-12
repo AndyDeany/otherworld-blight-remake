@@ -455,7 +455,7 @@ def play_sound(name, sound_type, multiplier=1, loops=0):
 # Defining a function to load a save file
 def load_game(savefile):
     try:
-        save = open("../Save Files/" + savefile + ".txt", "r")
+        save = open("../Save Files/save" + savefile + ".txt", "r")
         current = save.readline()[:-1]
         if current == "No save data":
             save.close()
@@ -490,7 +490,7 @@ def load_game(savefile):
 # Defining a function to save a save file
 def save_game(savefile):
     try:
-        save = open("../Save Files/" + savefile + ".txt", "w")
+        save = open("../Save Files/save" + savefile + ".txt", "w")
         save.write(current + "\n")
         save.write(current_room.name[-1] + "\n")
         save.write(form + "\n")
@@ -522,7 +522,7 @@ def save_game(savefile):
 # Defining a function to delete save files
 def deletesave(savefile):
     line_number = 0
-    save = open("../Save Files/" + savefile + ".txt", "r")
+    save = open("../Save Files/save" + savefile + ".txt", "r")
     while True:
         if save.readline() == "\n":
             number_of_lines = line_number
