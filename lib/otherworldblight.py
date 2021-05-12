@@ -10,13 +10,13 @@ from moviepy.editor import VideoFileClip
 # Defining the error logging function
 def log(error, error_message):
     try:
-        error_log = open(file_directory + "log.txt", "a")
+        error_log = open("../log.txt", "a")
         try:
             error_log.write(str(datetime.datetime.utcnow())[0:19] + " - " + error_message + ": " + str(error) + "\n")
         except:
             error_log.write(str(datetime.datetime.utcnow())[0:19] + " - " + error_message + ": Details Unknown\n")
         error_log.close()
-    except Exception as error:    # This will likely happen only when file_directory has not yet been defined
+    except Exception as error:  # Likely never happens as no reliance on file_directory anymore - remove.
         ctypes.windll.user32.MessageBoxW(0, "An error has occurred:\n\n    " + error_message + ".\n\n\nThis error occurred very early during game initialisation and could not be logged.", "Error", 1)
         raise
 
@@ -49,7 +49,7 @@ def load(file_name):
         if file_type == "png":
             return pygame.image.load("../images/" + file_name).convert_alpha()
         elif file_type == "ogg":
-            pygame.mixer.music.load(file_directory + "Sound Files\\" + file_name)
+            pygame.mixer.music.load("../Sound Files/" + file_name)
         elif file_type == "mpg":
             return VideoFileClip("../Video Files/" + file_name).subclip(0, 3)
         else:
@@ -75,13 +75,6 @@ from operator import attrgetter
 
 
 ### ---------- VARIABLE ASSIGNMENT - START ---------- ###
-
-## Obtaining the location of the game files so they can be accessed by the program
-try:
-    file_directory = os.getcwd()
-    file_directory = file_directory[0:len(file_directory)-12]
-except Exception as error:
-    log(error, "Unable to determine the game files' location")
 
 ## Assigning essential game variables
 try:
@@ -451,7 +444,7 @@ def play_sound(name, sound_type, multiplier=1, loops=0):
     try:
         global sound_playing
         sound_playing = True
-        sound = pygame.mixer.Sound(file_directory + "Sound Files\\" + name + ".ogg")
+        sound = pygame.mixer.Sound("../Sound Files/" + name + ".ogg")
         sounds.append(sound)
         sound.set_volume(multiplier * master_volume * volumes[sound_type])
         sound.play(loops)
@@ -462,35 +455,33 @@ def play_sound(name, sound_type, multiplier=1, loops=0):
 # Defining a function to load a save file
 def load_game(savefile):
     try:
-        save = open(file_directory + "Save Files/" + savefile + ".txt", "r")
-        if save.readline()[:-1] == "No save data":
+        save = open("../Save Files/" + savefile + ".txt", "r")
+        current = save.readline()[:-1]
+        if current == "No save data":
             save.close()
             return
-        else:
-            save = open(file_directory + "Save Files/" + savefile + ".txt", "r")
-            current = save.readline()[:-1]
-            current_room = rooms[int(save.readline()[:-1])]
-            form = save.readline()[:-1]
-            cutscene0_played = bool(save.readline()[:-1])
-            cutscene1_played = bool(save.readline()[:-1])
-            cutscene2_played = bool(save.readline()[:-1])
-            cutscene3_played = bool(save.readline()[:-1])
-            cutscene4_played = bool(save.readline()[:-1])
-            cutscene5_played = bool(save.readline()[:-1])
-            cutscene6_played = bool(save.readline()[:-1])
-            cutscene7_played = bool(save.readline()[:-1])
-            cutscene8_played = bool(save.readline()[:-1])
-            vincent[form].position = (int(save.readline()[:-1]), int(save.readline()[:-1]))
-            vincent[form].orientation = save.readline()[:-1]
-            vincent[form].room = int(save.readline()[:-1])
-            vincent[form].exp = int(save.readline()[:-1])
-            vincent[form].level = int(save.readline()[:-1])
-            vincent[form].skill_points = int(save.readline()[:-1])
-            vincent[form].max_life = int(save.readline()[:-1])
-            vincent[form].current_life = int(save.readline()[:-1])
-            for setting_value in menus["options menu"].settings:  # Reading in the saved options settings
-                setting_value = int(save.readline()[:-1])
-            globals().update(locals())  # Making all variables loaded global
+        current_room = rooms[int(save.readline()[:-1])]
+        form = save.readline()[:-1]
+        cutscene0_played = bool(save.readline()[:-1])
+        cutscene1_played = bool(save.readline()[:-1])
+        cutscene2_played = bool(save.readline()[:-1])
+        cutscene3_played = bool(save.readline()[:-1])
+        cutscene4_played = bool(save.readline()[:-1])
+        cutscene5_played = bool(save.readline()[:-1])
+        cutscene6_played = bool(save.readline()[:-1])
+        cutscene7_played = bool(save.readline()[:-1])
+        cutscene8_played = bool(save.readline()[:-1])
+        vincent[form].position = (int(save.readline()[:-1]), int(save.readline()[:-1]))
+        vincent[form].orientation = save.readline()[:-1]
+        vincent[form].room = int(save.readline()[:-1])
+        vincent[form].exp = int(save.readline()[:-1])
+        vincent[form].level = int(save.readline()[:-1])
+        vincent[form].skill_points = int(save.readline()[:-1])
+        vincent[form].max_life = int(save.readline()[:-1])
+        vincent[form].current_life = int(save.readline()[:-1])
+        for setting_value in menus["options menu"].settings:  # Reading in the saved options settings
+            setting_value = int(save.readline()[:-1])
+        globals().update(locals())  # Making all variables loaded global
     except Exception as error:
         log(error, "Failed to load " + savefile + " correctly")
         raise
@@ -499,7 +490,7 @@ def load_game(savefile):
 # Defining a function to save a save file
 def save_game(savefile):
     try:
-        save = open(file_directory + "Save Files/" + savefile + ".txt", "w")
+        save = open("../Save Files/" + savefile + ".txt", "w")
         save.write(current + "\n")
         save.write(current_room.name[-1] + "\n")
         save.write(form + "\n")
@@ -531,7 +522,7 @@ def save_game(savefile):
 # Defining a function to delete save files
 def deletesave(savefile):
     line_number = 0
-    save = open(file_directory + "Save Files/" + savefile + ".txt", "r")
+    save = open("../Save Files/" + savefile + ".txt", "r")
     while True:
         if save.readline() == "\n":
             number_of_lines = line_number
@@ -540,7 +531,7 @@ def deletesave(savefile):
             line_number += 1
     save.close()
 
-    save = open(file_directory + "Save Files\save" + savefile + ".txt", "w")
+    save = open("../Save Files/save" + savefile + ".txt", "w")
     save.write("No save data\n")
     for line in range(number_of_lines - 1):
         save.write("\n")
