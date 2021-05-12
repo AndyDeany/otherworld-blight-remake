@@ -48,6 +48,7 @@ class Keys:
         self.enter = Key(13)
         self.escape = Key(27)
         self.space = Key(32)
+        self.tab = Key(9)
         self.numpad_enter = Key(1073741912)
 
         self.right_arrow = Key(1073741903)
@@ -59,6 +60,12 @@ class Keys:
         self.a = Key(97)
         self.s = Key(115)
         self.d = Key(100)
+
+        self.e = Key(101)
+        self.r = Key(114)
+
+        self.one = Key(49)
+        self.numpad_one = Key(1073742050)
 
     def __getitem__(self, keycode):
         try:
