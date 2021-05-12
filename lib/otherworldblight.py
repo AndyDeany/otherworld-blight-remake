@@ -160,35 +160,10 @@ try:
 except Exception as error:
     log(error, "Failed to initialise the game window")
 
-# Keyboard inputs
-try:
-    accepting_text = False
-    input_text = ""
-    keys = Keys()
-    mouse = Mouse()
-except Exception as error:
-    log(error, "Failed to initialise keyboard input variabes")
-
-### ---------- VARIABLE ASSIGNMENT - END ---------- ###
-
+keys = Keys()
+mouse = Mouse()
 
 ### ---------- FUNCTION DEFINING - START ---------- ###
-
-# Defining a function to check if the mouse is in a certain area
-def mousein(start_x, end_x, start_y, end_y):
-    """Takes in coordinates as if it was a 1920x1080 screen"""
-    global error
-    try:
-        if mouse.x > start_x * (screen_width/1920.0) and mouse.x < end_x * (
-                screen_width/1920.0) and mouse.y > start_y * (screen_height/1080.0) and mouse.y < end_y * (
-                screen_height/1080.0):
-            return True
-        else:
-            return False
-    except Exception as error:
-        log("Unable to determine whether mouse coordinates meet the requirements: " + str(start_x) + " < x < " + str(
-            end_x) + ", " + str(start_y) + " < " + str(end_y))
-
 
 # Checking if the given arrow key has been held down the longest
 def is_longest_held(direction_held_time):
@@ -592,7 +567,7 @@ class Menu:
         global movement_started
         try:
             for index in range(len(self.options)):
-                if mousein(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
+                if mouse.is_in(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
                     self.current_selection = index
                     return
             
@@ -612,7 +587,7 @@ class Menu:
                     self.original_x = mouse.x
                     slider_selected = False
                     for index in range(len(self.options)):
-                        if mousein(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
+                        if mouse.is_in(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
                             self.current_selection = index
                             if self.sliders[self.current_selection][0]:
                                 slider_selected = True
@@ -1772,9 +1747,6 @@ while ongoing:
                 mouse.process_button_up(event)
             elif event.type == pygame.KEYDOWN:
                 keys.process_key_down(event)
-                if accepting_text:
-                    key_pressed = event.key # Assigning the last pressed key to a variable for accepting text
-                    # input_text += add_character()
             elif event.type == pygame.KEYUP:
                 keys.process_key_up(event)
                 
@@ -2287,12 +2259,12 @@ while ongoing:
                     
                     if show_spellbook:
                         display_spellbook()
-                        if mousein(748,825,499,576):
+                        if mouse.is_in(748,825,499,576):
                             screen.blit(tutorial[12], (0,0))
                             if mouse.left and cutscene5_played and not cutscene6_played and vincent[form].skill_points > 0:
                                 vincent[form].skill_points -= 1
                                 cutscene6_played = True
-                        elif mousein(579,656,428,505):
+                        elif mouse.is_in(579,656,428,505):
                             screen.blit(tutorial[11], (0,0))
                         if keys.escape or keys.backspace:
                             show_spellbook = False
