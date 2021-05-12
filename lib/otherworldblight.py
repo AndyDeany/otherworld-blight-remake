@@ -144,7 +144,7 @@ try:
             if mode == "fullscreen":
                 screen = pygame.display.set_mode(resolution, pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.FULLSCREEN)
             elif mode == "windowed":
-                os.environ['SDL_VIDEO_WINDOW_POS'] = str((MONITOR_WIDTH - screen_width)/2) + "," + str((MONITOR_HEIGHT - screen_height)/2)
+                os.environ['SDL_VIDEO_WINDOW_POS'] = str((MONITOR_WIDTH - screen_width)//2) + "," + str((MONITOR_HEIGHT - screen_height)//2)
                 screen = pygame.display.set_mode(resolution, pygame.HWSURFACE|pygame.DOUBLEBUF)
             elif mode == "borderless":
                 os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
@@ -179,9 +179,9 @@ def mousein(start_x, end_x, start_y, end_y):
     """Takes in coordinates as if it was a 1920x1080 screen"""
     global error
     try:
-        if mouse.x > start_x * (screen_width / 1920.0) and mouse.x < end_x * (
-                screen_width / 1920.0) and mouse.y > start_y * (screen_height / 1080.0) and mouse.y < end_y * (
-                screen_height / 1080.0):
+        if mouse.x > start_x * (screen_width/1920.0) and mouse.x < end_x * (
+                screen_width/1920.0) and mouse.y > start_y * (screen_height/1080.0) and mouse.y < end_y * (
+                screen_height/1080.0):
             return True
         else:
             return False
@@ -211,38 +211,38 @@ def add_movement(self, character, axis, file_type):
         if file_type == "image":
             if axis == "x":
                 if character.orientation == "left":
-                    return character.x + (self.square_size[0] * character.movement_cooldown * character.movespeed) / (
+                    return character.x + (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
                                 3 * fps)
                 elif character.orientation == "right":
-                    return character.x - (self.square_size[0] * character.movement_cooldown * character.movespeed) / (
+                    return character.x - (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
                                 3 * fps)
                 else:
                     return character.x
             elif axis == "y":
                 if character.orientation == "up":
-                    return character.y + (self.square_size[1] * character.movement_cooldown * character.movespeed) / (
+                    return character.y + (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
                                 3 * fps)
                 elif character.orientation == "down":
-                    return character.y - (self.square_size[1] * character.movement_cooldown * character.movespeed) / (
+                    return character.y - (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
                                 3 * fps)
                 else:
                     return character.y
         elif file_type == "canvas":
             if axis == "x":
                 if character.orientation == "left":
-                    return self.x - (self.square_size[0] * character.movement_cooldown * character.movespeed) / (
+                    return self.x - (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
                                 3 * fps)
                 elif character.orientation == "right":
-                    return self.x + (self.square_size[0] * character.movement_cooldown * character.movespeed) / (
+                    return self.x + (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
                                 3 * fps)
                 else:
                     return self.x
             elif axis == "y":
                 if character.orientation == "up":
-                    return self.y - (self.square_size[1] * character.movement_cooldown * character.movespeed) / (
+                    return self.y - (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
                                 3 * fps)
                 elif character.orientation == "down":
-                    return self.y + (self.square_size[1] * character.movement_cooldown * character.movespeed) / (
+                    return self.y + (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
                                 3 * fps)
                 else:
                     return self.y
@@ -295,8 +295,8 @@ def number_drop(number_type, character, value):
     global error
     try:
         global number_drops
-        drop_x = character.x + character.width / 2
-        drop_y = character.y + character.height / 2
+        drop_x = character.x + character.width // 2
+        drop_y = character.y + character.height // 2
         if number_type == "damage":
             colour = (255, 0, 0)
         elif number_type == "exp":
@@ -1143,8 +1143,8 @@ class Extra(object):
                         
                 if (show_extra and not self.image_name[0:9] == "NEGATIVES") or (not show_extra and self.image_name[0:9] == "NEGATIVES"):
                     if self.image_name[0:9] == "TESSELATE":
-                        for horizontal in range(-1,(room.width/self.width) + 1):
-                            for vertical in range(-1,(room.height/self.height) + 1):
+                        for horizontal in range(-1,(room.width//self.width) + 1):
+                            for vertical in range(-1,(room.height//self.height) + 1):
                                 screen.blit(self.image, (room.x + self.x + horizontal*self.width, room.y + self.y + vertical*self.height))
                     else:
                         screen.blit(self.image, (room.x + self.x, room.y + self.y))
@@ -1188,7 +1188,7 @@ class Room(object):
         self.grey_up = grey_up
         self.grey_right = grey_right
         self.grey_down = grey_down
-        self.max_coord = (((self.width - (grey_left + grey_right))/self.square_size[0]) - 1, ((self.height - (grey_up + grey_down))/self.square_size[1]) - 1)        
+        self.max_coord = (((self.width - (grey_left + grey_right))//self.square_size[0]) - 1, ((self.height - (grey_up + grey_down))//self.square_size[1]) - 1)
         self.blocked = blocked  # A list of squares which are blocked by terrain, such that the player cannot walk on them. Don't add squares higher than the max coordinate >_> (waste of space)
         self.exits = exits # A list of tuples, showing squares which cause the player to exit the current room, and which area's they lead to.
     
@@ -1257,29 +1257,29 @@ class Room(object):
         global error
         try:
             # Player's and canvas's x coordinates
-            player.x = (screen_width - player.width)/2
-            if self.grey_left + (self.square_size[0]*player.position[0]) + ((self.square_size[0] - player.width)/2) < player.x:
-                player.x = self.grey_left + (self.square_size[0]*player.position[0]) + ((self.square_size[0] - player.width)/2)
+            player.x = (screen_width - player.width)//2
+            if self.grey_left + (self.square_size[0]*player.position[0]) + ((self.square_size[0] - player.width)//2) < player.x:
+                player.x = self.grey_left + (self.square_size[0]*player.position[0]) + ((self.square_size[0] - player.width)//2)
                 player.x = add_movement(self, player, "x", "image")
                 self.x = 0
                 # If the player is transistioning between a place where the player model would move and a place where the canvas would move
-                if (player.x > (screen_width - player.width)/2
-                    and (not self.grey_left + (self.square_size[0]*player.position[0]) + ((self.square_size[0] - player.width)/2) < player.x
+                if (player.x > (screen_width - player.width)//2
+                    and (not self.grey_left + (self.square_size[0]*player.position[0]) + ((self.square_size[0] - player.width)//2) < player.x
                          or self.width > screen_width + self.square_size[0])):
-                    self.x -= player.x - (screen_width - player.width)/2
-                    player.x = (screen_width - player.width)/2
-            elif screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord[0] - player.position[0])) + ((self.square_size[0] - player.width)/2) > player.x:
-                player.x = screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord[0] - player.position[0])) + ((self.square_size[0] - player.width)/2)
+                    self.x -= player.x - (screen_width - player.width)//2
+                    player.x = (screen_width - player.width)//2
+            elif screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord[0] - player.position[0])) + ((self.square_size[0] - player.width)//2) > player.x:
+                player.x = screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord[0] - player.position[0])) + ((self.square_size[0] - player.width)//2)
                 player.x = add_movement(self, player, "x", "image")
                 self.x = -(self.width - screen_width)
                 # If the player is transistioning between a place where the player model would move and a place where the canvas would move
-                if (player.x < (screen_width - player.width)/2
-                    and (not screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord[0] - player.position[0])) + ((self.square_size[0] - player.width)/2) > player.x
+                if (player.x < (screen_width - player.width)//2
+                    and (not screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord[0] - player.position[0])) + ((self.square_size[0] - player.width)//2) > player.x
                          or self.width > screen_width + self.square_size[0])):
-                    self.x += (screen_width - player.width)/2 - player.x
-                    player.x = (screen_width - player.width)/2
+                    self.x += (screen_width - player.width)//2 - player.x
+                    player.x = (screen_width - player.width)//2
             else:
-                self.x = -(self.grey_left + (self.square_size[0]*player.position[0]) - ((screen_width - player.width)/2) + (self.square_size[0] - player.width)/2)
+                self.x = -(self.grey_left + (self.square_size[0]*player.position[0]) - ((screen_width - player.width)//2) + (self.square_size[0] - player.width)//2)
                 self.x = add_movement(self, player, "x", "canvas")
                 if self.x > 0:
                     player.x -= self.x
@@ -1289,29 +1289,29 @@ class Room(object):
                     self.x = -(self.width - screen_width)
             
             # Player's and canvas's y coordinates
-            player.y = (screen_height - player.height)/2
+            player.y = (screen_height - player.height)//2
             if self.grey_up + self.square_size[1]*(player.position[1] - 1) + (2*self.square_size[1] - player.height) < player.y:
                 player.y = self.grey_up + self.square_size[1]*(player.position[1] - 1) + (2*self.square_size[1] - player.height)
                 player.y = add_movement(self, player, "y", "image")
                 self.y = 0
                 # If the player is transistioning between a place where the player model would move and a place where the canvas would move
-                if (player.y > (screen_height - player.height)/2
+                if (player.y > (screen_height - player.height)//2
                     and (not self.grey_up + self.square_size[1]*(player.position[1] - 1) + (2*self.square_size[1] - player.height) < player.y
                          or self.height > screen_height + self.square_size[1])):                    
-                    self.y -= player.y - (screen_height - player.height)/2
-                    player.y = (screen_height - player.height)/2
+                    self.y -= player.y - (screen_height - player.height)//2
+                    player.y = (screen_height - player.height)//2
             elif screen_height - self.grey_down - (self.square_size[1]*(self.max_coord[1] - player.position[1] + 2)) + (2*self.square_size[1] - player.height) > player.y:
                 player.y = screen_height - self.grey_down - (self.square_size[1]*(self.max_coord[1] - player.position[1] + 2)) + (2*self.square_size[1] - player.height)
                 player.y = add_movement(self, player, "y", "image")
                 self.y = -(self.height - screen_height)
                 # If the player is transistioning between a place where the player model would move and a place where the canvas would move
-                if (player.y < (screen_height - player.height)/2
+                if (player.y < (screen_height - player.height)//2
                     and (not screen_height - self.grey_down - (self.square_size[1]*(self.max_coord[1] - player.position[1] + 2)) + (2*self.square_size[1] - player.height) > player.y
                          or self.height > screen_height + self.square_size[1])):
-                    self.y += (screen_height - player.height)/2 - player.y
-                    player.y = (screen_height - player.height)/2
+                    self.y += (screen_height - player.height)//2 - player.y
+                    player.y = (screen_height - player.height)//2
             else:
-                self.y = -(self.grey_up + (self.square_size[1]*(player.position[1] - 1)) - ((screen_height - player.height)/2) + (2*self.square_size[1] - player.height))
+                self.y = -(self.grey_up + (self.square_size[1]*(player.position[1] - 1)) - ((screen_height - player.height)//2) + (2*self.square_size[1] - player.height))
                 self.y = add_movement(self, player, "y", "canvas")
                 if self.y > 0:
                     player.y -= self.y
@@ -1327,7 +1327,7 @@ class Room(object):
     def display_npc(self, npc):
         global error
         try:
-            npc.x = self.grey_left + self.square_size[0]*npc.position[0] + (self.square_size[0] - npc.width)/2 + self.x
+            npc.x = self.grey_left + self.square_size[0]*npc.position[0] + (self.square_size[0] - npc.width)//2 + self.x
             npc.y = self.grey_up + self.square_size[1]*(npc.position[1] - 1) + (2*self.square_size[1] - npc.height) + self.y
             npc.x = add_movement(self, npc, "x", "image")
             npc.y = add_movement(self, npc, "y", "image")
@@ -1899,7 +1899,7 @@ while ongoing:
                     screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
                     flux.display(current_room, vincent[form])                    
                     current_room.extras[5].display(current_room, vincent[form])
-                    fade_screen.fill((151,0,0,255*((1/1.3)*(cutscene_time-62.4))))
+                    fade_screen.fill((151, 0, 0, int(255*((1/1.3)*(cutscene_time-62.4)))))
                     screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 64:
                     screen.fill((151,0,0))
@@ -1908,7 +1908,7 @@ while ongoing:
                 elif cutscene_time < 66:
                     screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))                    
                     current_room.extras[5].display(current_room, vincent[form])
-                    fade_screen.fill((151,0,0,255*(1-0.5*(cutscene_time-64))))
+                    fade_screen.fill((151, 0, 0, int(255*(1-0.5*(cutscene_time-64)))))
                     screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 76:
                     sound_playing = False
@@ -2060,11 +2060,11 @@ while ongoing:
             
             elif current[8] == "8":
                 current_room.display_room(vincent[form])                
-                screen.blit(zaal_images["zaal"][(frame%6)/3], (current_room.x + 840, current_room.y + 71))
+                screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
                 if cutscene_time < 2:
                     if not sound_playing:
                         play_sound("thunder", "sfx")                            
-                    fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
+                    fade_screen.fill((255, 255, 255, int(255*(1-0.5*cutscene_time))))
                     screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10:                    
                     if not display_dialogue("vincent", 1):
@@ -2247,7 +2247,7 @@ while ongoing:
                             zaal_animation -= 1
                             screen.blit(zaal_images["attack"][18-zaal_animation], (current_room.x + 840, current_room.y + 71))
                         else:
-                            screen.blit(zaal_images["zaal"][(frame%6)/3], (current_room.x + 840, current_room.y + 71))
+                            screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
                         screen.blit(zaal_images["health_back"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)))
                         screen.blit(zaal_images["health"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)), (0,0,zaal_life,52))
                         screen.blit(zaal_images["health_icon"], (1786,0))
@@ -2305,11 +2305,11 @@ while ongoing:
                     
                     if levelling_up:                        
                         if levelup_frame < 22:
-                            screen.blit(levelup_images[levelup_frame/2], (0,0))
+                            screen.blit(levelup_images[levelup_frame//2], (0,0))
                         elif levelup_frame < 52:                        
                             screen.blit(levelup_images[11], (0,0))
                         elif levelup_frame < 58:
-                            screen.blit(levelup_images[(levelup_frame-28)/2], (0,0))
+                            screen.blit(levelup_images[(levelup_frame-28)//2], (0,0))
                         else:
                             levelup_frame = 0
                             levelling_up = False
