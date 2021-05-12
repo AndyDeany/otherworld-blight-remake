@@ -1,3 +1,5 @@
+import time
+
 import pygame
 
 
@@ -10,6 +12,7 @@ class Key:
         self.keycode = keycode
         self.just_pressed = False
         self.is_pressed = False
+        self._pressed_time = None
         self.all[self.keycode] = self
 
     def __bool__(self):
@@ -18,9 +21,18 @@ class Key:
     def down(self):
         self.just_pressed = True
         self.is_pressed = True
+        self._pressed_time = time.time()
 
     def up(self):
         self.is_pressed = False
+        self._pressed_time = None
+
+    @property
+    def time_held(self):
+        """Return how long the key has been held for."""
+        if self._pressed_time is None:
+            return 0
+        return time.time() - self._pressed_time
 
 
 class Keys:
@@ -36,6 +48,16 @@ class Keys:
         self.enter = Key(13)
         self.escape = Key(27)
         self.numpad_enter = Key(1073741912)
+
+        self.right_arrow = Key(1073741903)
+        self.left_arrow = Key(1073741904)
+        self.down_arrow = Key(1073741905)
+        self.up_arrow = Key(1073741906)
+
+        self.w = Key(119)
+        self.a = Key(97)
+        self.s = Key(115)
+        self.d = Key(100)
 
     def __getitem__(self, keycode):
         try:
