@@ -254,14 +254,11 @@ def transform():
 
 # Defining a function to check if Vincent is in a valid place to interact with the given coordinates
 def is_interactable(coordinates):
-    if (vincent[form].position == coordinates
+    return (vincent[form].position == coordinates
             or (vincent[form].position == (coordinates[0] - 1, coordinates[1]) and vincent[form].orientation == "right")
             or (vincent[form].position == (coordinates[0], coordinates[1] - 1) and vincent[form].orientation == "down")
             or (vincent[form].position == (coordinates[0] + 1, coordinates[1]) and vincent[form].orientation == "left")
-            or (vincent[form].position == (coordinates[0], coordinates[1] + 1) and vincent[form].orientation == "up")):
-        return True
-    else:
-        return False
+            or (vincent[form].position == (coordinates[0], coordinates[1] + 1) and vincent[form].orientation == "up"))
 
 
 # Defining functinos to show exp drops, damage values and healing values
@@ -413,7 +410,7 @@ def play_music(name, music_type, multiplier=1, loops=-1):
 
 
 # Defining a function to start the playing of sound effects
-def play_sound(name, sound_type, multiplier=1, loops=0):
+def play_sound(name, sound_type, multiplier=1.0, loops=0):
     """sound_type = \"sfx\", \"music\", \"voice\""""
     global error
     try:
@@ -430,7 +427,7 @@ def play_sound(name, sound_type, multiplier=1, loops=0):
 # Defining a function to load a save file
 def load_game(savefile):
     try:
-        save = open("../Save Files/save" + savefile + ".txt", "r")
+        save = open("../Save Files/" + savefile + ".txt", "r")
         current = save.readline()[:-1]
         if current == "No save data":
             save.close()
@@ -775,15 +772,15 @@ class Player(Character):
     def change_position(self, room):
         global error
         try:            
-            if self.movement_cooldown: # decrementing self.movement cooldown if it is not equal to 0
+            if self.movement_cooldown:  # decrementing self.movement cooldown if it is not equal to 0
                 self.movement_cooldown -= 1
-            elif ((keys.left_arrow.time_held > 1 or keys.a.time_held > 1) or ((keys.left_arrow.time_held or keys.a.time_held) and self.orientation == "left")) and (is_longest_held(keys.left_arrow.time_held) or is_longest_held(keys.a.time_held)):
+            elif ((keys.left_arrow.time_held > 1/fps or keys.a.time_held > 1/fps) or ((keys.left_arrow.time_held or keys.a.time_held) and self.orientation == "left")) and (is_longest_held(keys.left_arrow.time_held) or is_longest_held(keys.a.time_held)):
                 self.move(room, "left")
-            elif ((keys.right_arrow.time_held > 1 or keys.d.time_held > 1) or ((keys.right_arrow.time_held or keys.d.time_held) and self.orientation == "right")) and (is_longest_held(keys.right_arrow.time_held) or is_longest_held(keys.d.time_held)):
+            elif ((keys.right_arrow.time_held > 1/fps or keys.d.time_held > 1/fps) or ((keys.right_arrow.time_held or keys.d.time_held) and self.orientation == "right")) and (is_longest_held(keys.right_arrow.time_held) or is_longest_held(keys.d.time_held)):
                 self.move(room, "right")
-            elif ((keys.up_arrow.time_held > 1 or keys.w.time_held > 1) or ((keys.up_arrow.time_held or keys.w.time_held) and self.orientation == "up")) and (is_longest_held(keys.up_arrow.time_held) or is_longest_held(keys.w.time_held)):
+            elif ((keys.up_arrow.time_held > 1/fps or keys.w.time_held > 1/fps) or ((keys.up_arrow.time_held or keys.w.time_held) and self.orientation == "up")) and (is_longest_held(keys.up_arrow.time_held) or is_longest_held(keys.w.time_held)):
                 self.move(room, "up")
-            elif ((keys.down_arrow.time_held > 1 or keys.s.time_held > 1) or ((keys.down_arrow.time_held or keys.s.time_held) and self.orientation == "down")) and (is_longest_held(keys.down_arrow.time_held) or is_longest_held(keys.s.time_held)):
+            elif ((keys.down_arrow.time_held > 1/fps or keys.s.time_held > 1/fps) or ((keys.down_arrow.time_held or keys.s.time_held) and self.orientation == "down")) and (is_longest_held(keys.down_arrow.time_held) or is_longest_held(keys.s.time_held)):
                 self.move(room, "down")
         except Exception as error:
             log(error, "Failed to change player's (" + self.name + ") position")
