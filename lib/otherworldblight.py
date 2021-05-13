@@ -20,6 +20,7 @@ from lib.session import Session
 from lib.audio import AudioClip
 
 from lib.loot import Loot
+from lib.base import Base
 
 
 # Defining the error logging function
@@ -153,36 +154,13 @@ def add_movement(self, character, axis, file_type):
         return self_or_character.y
 
 
-# Defining a function that transforms Vincent
-def transform():
-    global form, vincent_slime, vincent_human
-    if form == "human":
-        vincent_slime.position = vincent_human.position
-        vincent_slime.orientation = vincent_human.orientation
-        vincent_slime.room = vincent_human.room
-        vincent_slime.exp = vincent_human.exp
-        vincent_slime.level = vincent_human.level
-        vincent_slime.skill_points = vincent_human.skill_points
-        vincent_slime.current_life = vincent_human.current_life
-        form = "slime"
-    else:  # when form = "slime"
-        vincent_human.position = vincent_slime.position
-        vincent_human.orientation = vincent_slime.orientation
-        vincent_human.room = vincent_slime.room
-        vincent_human.exp = vincent_slime.exp
-        vincent_human.level = vincent_slime.level
-        vincent_human.skill_points = vincent_slime.skill_points
-        vincent_human.current_life = vincent_slime.current_life
-        form = "human"
-
-
 # Defining a function to check if Vincent is in a valid place to interact with the given coordinates
 def is_interactable(coordinates):
-    return (vincent[form].position == coordinates
-            or (vincent[form].position == (coordinates[0] - 1, coordinates[1]) and vincent[form].orientation == "right")
-            or (vincent[form].position == (coordinates[0], coordinates[1] - 1) and vincent[form].orientation == "down")
-            or (vincent[form].position == (coordinates[0] + 1, coordinates[1]) and vincent[form].orientation == "left")
-            or (vincent[form].position == (coordinates[0], coordinates[1] + 1) and vincent[form].orientation == "up"))
+    return (vincent.position == coordinates
+            or (vincent.position == (coordinates[0] - 1, coordinates[1]) and vincent.orientation == "right")
+            or (vincent.position == (coordinates[0], coordinates[1] - 1) and vincent.orientation == "down")
+            or (vincent.position == (coordinates[0] + 1, coordinates[1]) and vincent.orientation == "left")
+            or (vincent.position == (coordinates[0], coordinates[1] + 1) and vincent.orientation == "up"))
 
 
 # Defining functinos to show exp drops, damage values and healing values
@@ -225,8 +203,8 @@ def display_spellbook():
     else:
         session.screen.blit(spellbook_images["firebolt1"], (0, 0))
     session.screen.blit(spellbook_images["firebolt_uncharged"], (0, 0))
-    session.screen.blit(font.render(str(vincent[form].level), True, (199, 189, 189)), (610, 20))
-    session.screen.blit(font.render(str(vincent[form].skill_points), True, (199, 189, 189)), (1665, 20))
+    session.screen.blit(font.render(str(vincent.level), True, (199, 189, 189)), (610, 20))
+    session.screen.blit(font.render(str(vincent.skill_points), True, (199, 189, 189)), (1665, 20))
     session.screen.blit(font.render(str(firebolt.level), True, (142, 0, 0)), (834, 239))
     session.screen.blit(esc_exit, (0, 0))
 
@@ -234,12 +212,12 @@ def display_spellbook():
 # Defining a function that displays the Heads-up Display (HUD)
 def display_hud():
     session.screen.blit(hud_images["expback"], (0, 0))
-    session.screen.blit(hud_images["expbar"], (728, 951), (0, 0, (vincent[form].exp / 100.0) * 467, 130))
+    session.screen.blit(hud_images["expbar"], (728, 951), (0, 0, (vincent.exp / 100.0) * 467, 130))
     session.screen.blit(hud_images["hud"], (0, 0))
     session.screen.blit(hud_images["health_orb"],
-                (1025, 994 + (1 - (vincent[form].current_life / float(vincent[form].max_life))) * 87), (
-                0, (1 - (vincent[form].current_life / float(vincent[form].max_life))) * 87, 123,
-                (vincent[form].current_life / float(vincent[form].max_life)) * 87))
+                (1025, 994 + (1 - (vincent.current_life / float(vincent.max_life))) * 87), (
+                0, (1 - (vincent.current_life / float(vincent.max_life))) * 87, 123,
+                (vincent.current_life / float(vincent.max_life)) * 87))
 
     for index in range(len(spells)):
         if abilities[spells[index]].cooldown > 0:
@@ -268,7 +246,7 @@ def load_game(savefile):
         save.close()
         return
     current_room = rooms[int(save.readline()[:-1])]
-    form = save.readline()[:-1]
+    vincent.form = save.readline()[:-1]
     cutscene0_played = bool(save.readline()[:-1])
     cutscene1_played = bool(save.readline()[:-1])
     cutscene2_played = bool(save.readline()[:-1])
@@ -278,14 +256,14 @@ def load_game(savefile):
     cutscene6_played = bool(save.readline()[:-1])
     cutscene7_played = bool(save.readline()[:-1])
     cutscene8_played = bool(save.readline()[:-1])
-    vincent[form].position = (int(save.readline()[:-1]), int(save.readline()[:-1]))
-    vincent[form].orientation = save.readline()[:-1]
-    vincent[form].room = int(save.readline()[:-1])
-    vincent[form].exp = int(save.readline()[:-1])
-    vincent[form].level = int(save.readline()[:-1])
-    vincent[form].skill_points = int(save.readline()[:-1])
-    vincent[form].max_life = int(save.readline()[:-1])
-    vincent[form].current_life = int(save.readline()[:-1])
+    vincent.position = (int(save.readline()[:-1]), int(save.readline()[:-1]))
+    vincent.orientation = save.readline()[:-1]
+    vincent.room = int(save.readline()[:-1])
+    vincent.exp = int(save.readline()[:-1])
+    vincent.level = int(save.readline()[:-1])
+    vincent.skill_points = int(save.readline()[:-1])
+    vincent.max_life = int(save.readline()[:-1])
+    vincent.current_life = int(save.readline()[:-1])
     for setting_value in menus["options menu"].settings:  # Reading in the saved options settings
         setting_value = int(save.readline()[:-1])
     globals().update(locals())  # Making all variables loaded global
@@ -296,7 +274,7 @@ def save_game(savefile):
     save = open("../saves/save" + savefile + ".txt", "w")
     save.write(current + "\n")
     save.write(current_room.name[-1] + "\n")
-    save.write(form + "\n")
+    save.write(vincent.form + "\n")
     save.write(str(cutscene0_played) + "\n")
     save.write(str(cutscene1_played) + "\n")
     save.write(str(cutscene2_played) + "\n")
@@ -306,15 +284,15 @@ def save_game(savefile):
     save.write(str(cutscene6_played) + "\n")
     save.write(str(cutscene7_played) + "\n")
     save.write(str(cutscene8_played) + "\n")
-    save.write(str(vincent[form].position[0]) + "\n")
-    save.write(str(vincent[form].position[1]) + "\n")
-    save.write(str(vincent[form].orientation) + "\n")
-    save.write(str(vincent[form].room) + "\n")
-    save.write(str(vincent[form].exp) + "\n")
-    save.write(str(vincent[form].level) + "\n")
-    save.write(str(vincent[form].skill_points) + "\n")
-    save.write(str(vincent[form].max_life) + "\n")
-    save.write(str(vincent[form].current_life) + "\n")
+    save.write(str(vincent.position[0]) + "\n")
+    save.write(str(vincent.position[1]) + "\n")
+    save.write(str(vincent.orientation) + "\n")
+    save.write(str(vincent.room) + "\n")
+    save.write(str(vincent.exp) + "\n")
+    save.write(str(vincent.level) + "\n")
+    save.write(str(vincent.skill_points) + "\n")
+    save.write(str(vincent.max_life) + "\n")
+    save.write(str(vincent.current_life) + "\n")
     for setting_value in menus["options menu"].settings:  # Saving the players option settings
         save.write(str(setting_value) + "\n")
     save.close()
@@ -442,7 +420,7 @@ class Menu:
             current = self.escape_action
 
 
-class Character(object):    # maybe add an "id" attribute. One to identify each object for coding purposes. Incase the names change/need to be different or whatever
+class Character(Base):    # maybe add an "id" attribute. One to identify each object for coding purposes. Incase the names change/need to be different or whatever
     def __init__(self, name, frames, position, orientation, movespeed, room, exp, max_life, current_life):
         self.name = name    # Character's name
         self.x = 0  # Character's screen x coordinate
@@ -463,7 +441,7 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
         self.skill_points = 0
         self.max_life = max_life            # Life (health) points
         self.current_life = current_life
-        self.alive = True        
+        self.alive = True
         self.death_frame = 0
         self.dead = False
     
@@ -516,7 +494,7 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
                 self.death_frame = 0
                 self.displayed = False  # for abilities
                 if kill:
-                    vincent[form].gain_exp(self)
+                    vincent.gain_exp(self)
     
     # Returns an image for the character based on their current state
     def select_image(self): # Add current action to this somehow? Characters will certainly look different when standing still/walking/using moves
@@ -549,7 +527,34 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
 
 class Player(Character):
     def __init__(self, name, frames, position, orientation, movespeed, room, exp, max_life, current_life):
-        super(Player, self).__init__(name, frames, position, orientation, movespeed, room, exp, max_life, current_life)
+        self.form = "human"
+        super().__init__(name, frames, position, orientation, movespeed, room, exp, max_life, current_life)
+        self._slime_frames = {frame: {direction: load(f"vincent/slime/{direction}{frame}.png")
+                                      for direction in ("left", "up", "right", "down")}
+                              for frame in range(6)}
+
+    @property
+    def name(self):
+        return "Vincent Human" if self.form == "human" else "Vincent Slime"
+
+    @name.setter
+    def name(self, value):
+        pass
+
+    def transform(self):
+        """Transform between a human and a slime."""
+        if self.form == "human":
+            self.form = "slime"
+            self._human_frames = self.frames
+            self.frames = self._slime_frames
+            self.movespeed = 20
+        elif self.form == "slime":
+            self.form = "human"
+            self.frames = self._human_frames
+            self.movespeed = 15
+        self.image = self.select_image()
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
 
     # Changing the direction in which the player is facing. This is useful for directing the player's abilities
     def change_orientation(self):
@@ -578,9 +583,9 @@ class Player(Character):
     
     def check_exit(self, room):
         if not self.movement_cooldown:
-            for exit in room.exits:
-                if self.position == exit.coordinates:
-                    self.join(exit.room, exit.position)
+            for exit_ in room.exits:
+                if self.position == exit_.coordinates:
+                    self.join(exit_.room, exit_.position)
     
     def join(self, room, position):
         global current_room
@@ -805,10 +810,10 @@ class Ability(Character):
                     number_drop("damage", npc, damage_dealt)
                     self.alive = False
         else:
-            if self.position == vincent[form].position and self.alive:
+            if self.position == vincent.position and self.alive:
                 damage_dealt = int(self.damage*(0.9 + 0.2*random.random()))
-                vincent[form].current_life -= damage_dealt
-                number_drop("damage", vincent[form], damage_dealt)
+                vincent.current_life -= damage_dealt
+                number_drop("damage", vincent, damage_dealt)
                 self.alive = False
                 
 
@@ -1405,10 +1410,7 @@ rooms = [
 
 
 current_room = rooms[0]
-vincent_human = Player("Vincent Human", 4, (7,7), "down", 15, 0, 0, 1000, 1000)
-vincent_slime = Player("Vincent Slime", 6, (7,7), "down", 20, 0, 0, 1000, 1000)
-vincent = {"human": vincent_human, "slime": vincent_slime}
-form = "human"
+vincent = Player("Vincent Human", 4, (7,7), "down", 15, 0, 0, 1000, 1000)
 mean_slime = Npc("Enemy Slime", 6, (0,4), "right", 15, -1, 50, 80, 500, 500)
 firebolt = Ability("Firebolt", 6, (0,0), "right", 45, 2, 100, 2, 10)
 inferno = Ability("Inferno", 12, (0,0), "down", 90, 3, 200, 2, 10)
@@ -1474,7 +1476,7 @@ while session.is_running:
         elif current[0:8] == "cutscene":
             cutscene_time = session.uptime - cutscene_start_time
             if cutscene_time < 1:                
-                vincent[form].change_image()
+                vincent.change_image()
             if current[8] == "0":
                 if cutscene_time < 3:
                     session.screen.fill((0,0,0))
@@ -1483,25 +1485,25 @@ while session.is_running:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
                         session.audio.sound.play(AudioClip("portal.ogg", 0.1), loop=True)
                     session.screen.fill((0,0,0))
-                    portal.display(current_room, vincent[form])
+                    portal.display(current_room, vincent)
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-3))))
                     session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10:
-                    portal.display(current_room, vincent[form])
+                    portal.display(current_room, vincent)
                     if not display_dialogue("vincent", 0):
                         cutscene_start_time = session.uptime - 10
                 elif cutscene_time < 12:
                     if len(session.audio.sound.currently_playing) < 2:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
-                    current_room.display_room(vincent[form])
+                    current_room.display_room(vincent)
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-10))))
                     session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 17:
-                    current_room.display_room(vincent[form])
+                    current_room.display_room(vincent)
                     if not display_dialogue("vincent", 1):
                         cutscene_start_time = session.uptime - 17
                 elif cutscene_time < 10017:
-                    current_room.display_room(vincent[form])
+                    current_room.display_room(vincent)
                     session.screen.blit(tutorial[0], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10017
@@ -1511,7 +1513,7 @@ while session.is_running:
                     current = "in game"
             
             elif current[8] == "1":
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
                 if cutscene_time < 10:
                     if not display_dialogue("vincent", 1):
                         cutscene_start_time = session.uptime - 10
@@ -1532,28 +1534,28 @@ while session.is_running:
                         cutscene_start_time = session.uptime - 60
                 elif cutscene_time < 62.4:
                     if not coordinates_set:                        
-                        star.x += 70*(vincent[form].position[0] - 12)
-                        flux.x += 70*(vincent[form].position[0] - 12)
+                        star.x += 70*(vincent.position[0] - 12)
+                        flux.x += 70*(vincent.position[0] - 12)
                         coordinates_set = True
-                    star.display(current_room, vincent[form])
-                    session.screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
-                    current_room.extras[5].display(current_room, vincent[form])
+                    star.display(current_room, vincent)
+                    session.screen.blit(vincent.image, (vincent.x,vincent.y))
+                    current_room.extras[5].display(current_room, vincent)
                     if cutscene_time > 61 and not session.audio.sound.is_playing:
                         session.audio.sound.play(AudioClip("transform.ogg"))
                 elif cutscene_time < 63.7:                
-                    star.display(current_room, vincent[form])
-                    session.screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
-                    flux.display(current_room, vincent[form])                    
-                    current_room.extras[5].display(current_room, vincent[form])
+                    star.display(current_room, vincent)
+                    session.screen.blit(vincent.image, (vincent.x,vincent.y))
+                    flux.display(current_room, vincent)                    
+                    current_room.extras[5].display(current_room, vincent)
                     fade_screen.fill((151, 0, 0, int(255*((1/1.3)*(cutscene_time-62.4)))))
                     session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 64:
                     session.screen.fill((151,0,0))
-                    if form == "human":
-                        transform()
+                    if vincent.form == "human":
+                        vincent.transform()
                 elif cutscene_time < 66:
-                    session.screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))                    
-                    current_room.extras[5].display(current_room, vincent[form])
+                    session.screen.blit(vincent.image, (vincent.x,vincent.y))                    
+                    current_room.extras[5].display(current_room, vincent)
                     fade_screen.fill((151, 0, 0, int(255*(1-0.5*(cutscene_time-64)))))
                     session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 76:
@@ -1579,7 +1581,7 @@ while session.is_running:
                     current = "in game"
                 
             elif current[8] == "2":
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
@@ -1597,7 +1599,7 @@ while session.is_running:
                     current = "in game"
             
             elif current[8] == "3":
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
                 if cutscene_time < 10000:
                     display_spellbook()
                     session.screen.blit(tutorial[2], (0,0))
@@ -1646,7 +1648,7 @@ while session.is_running:
                     current = "in game"
             
             elif current[8] == "4":
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
                 if cutscene_time < 25:
                     if not display_dialogue("vincent", 6):
                         cutscene_start_time = session.uptime - 25
@@ -1655,8 +1657,8 @@ while session.is_running:
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10025
                 else:
-                    vincent[form].exp += 35
-                    number_drop("exp", vincent[form], 35)
+                    vincent.exp += 35
+                    number_drop("exp", vincent, 35)
                     mean_slime.room = 2
                     mean_slime.moves = ["right" for n in range(100)] + ["down" for n in range(10)]
                     cutscene4_played = True
@@ -1665,7 +1667,7 @@ while session.is_running:
                     current = "in game"
             
             elif current[8] == "5":
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
                 if cutscene_time < 10000:
                     session.screen.blit(tutorial[10], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
@@ -1676,7 +1678,7 @@ while session.is_running:
                     current = "in game"
             
             elif current[8] == "7":
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
                 firebolt.exist(current_room)
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
@@ -1702,7 +1704,7 @@ while session.is_running:
                     current = "in game"
             
             elif current[8] == "8":
-                current_room.display_room(vincent[form])                
+                current_room.display_room(vincent)                
                 session.screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
@@ -1741,7 +1743,7 @@ while session.is_running:
                     current = "in game"
                     
             elif current[8] == "9":
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
@@ -1753,10 +1755,10 @@ while session.is_running:
         elif current == "credits":
             cutscene_time = session.uptime - cutscene_start_time
             if cutscene_time < 12.0/session.fps:
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
                 session.screen.blit(zaal_images["death"][int(cutscene_time*session.fps)], (current_room.x + 840, current_room.y + 71))
             elif cutscene_time < 5:
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
                 fade_screen.fill((0,0,0,51*cutscene_time))
                 session.screen.blit(fade_screen, (0,0))
             else:
@@ -1828,7 +1830,7 @@ while session.is_running:
         elif current == "dead":
             cutscene_time = session.uptime - cutscene_start_time
             if cutscene_time < 5:
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
                 fade_screen.fill((0,0,0,51*cutscene_time))
                 session.screen.blit(fade_screen, (0,0))
             else:
@@ -1839,53 +1841,53 @@ while session.is_running:
                 cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene0"
-            elif not cutscene1_played and vincent[form].room == 1 and vincent[form].position[1] < 7 and vincent[form].movement_cooldown == 0:
+            elif not cutscene1_played and vincent.room == 1 and vincent.position[1] < 7 and vincent.movement_cooldown == 0:
                 cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene1"
-            elif not cutscene2_played and vincent[form].room == 2 and vincent[form].position[1] < 26 and vincent[form].movement_cooldown == 0:
+            elif not cutscene2_played and vincent.room == 2 and vincent.position[1] < 26 and vincent.movement_cooldown == 0:
                 cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene2"
-            elif not cutscene8_played and vincent[form].room == 3:
+            elif not cutscene8_played and vincent.room == 3:
                 cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene8"
             else:
-                vincent[form].check_death()
-                vincent[form].die()
+                vincent.check_death()
+                vincent.die()
                 firebolt.exist(current_room)
                 if not loot.is_displaying:
-                    vincent[form].change_orientation()
-                    vincent[form].change_position(current_room)
-                    vincent[form].check_exit(current_room)
+                    vincent.change_orientation()
+                    vincent.change_position(current_room)
+                    vincent.check_exit(current_room)
 
                     if mean_slime.room == current_room.number:
                         mean_slime.check_death()
                         mean_slime.die(kill=True)
-                        if vincent[form].alive:
-                            mean_slime.find_route(current_room, vincent[form].position)
+                        if vincent.alive:
+                            mean_slime.find_route(current_room, vincent.position)
                         else:
-                            mean_slime.find_route(current_room, (vincent[form].position[0]-10, vincent[form].position[1]))
+                            mean_slime.find_route(current_room, (vincent.position[0]-10, vincent.position[1]))
                         mean_slime.change_orientation()
                         mean_slime.change_position(current_room)
                         mean_slime.change_image()
-                        mean_slime.check_collision(vincent[form])
+                        mean_slime.check_collision(vincent)
 
-                if vincent[form].dead:
+                if vincent.dead:
                     current = "dead"
 
-                vincent[form].change_image()
+                vincent.change_image()
 
-                current_room.display_room(vincent[form])
+                current_room.display_room(vincent)
 
                 if current_room.number == 3 and not cutscene8_played:
                     session.screen.fill((0,0,0))
 
-                if current_room.number == 3 and cutscene8_played and vincent[form].alive:
+                if current_room.number == 3 and cutscene8_played and vincent.alive:
                     inferno.exist(current_room)
-                    inferno.use(vincent[form])
-                    inferno.cast(vincent[form])
+                    inferno.use(vincent)
+                    inferno.cast(vincent)
                     if zaal_animation > 0:
                         zaal_animation -= 1
                         session.screen.blit(zaal_images["attack"][18-zaal_animation], (current_room.x + 840, current_room.y + 71))
@@ -1931,18 +1933,18 @@ while session.is_running:
                     display_spellbook()
                     if session.mouse.is_in(748, 499, 825, 576):
                         session.screen.blit(tutorial[12], (0,0))
-                        if session.mouse.left and cutscene5_played and not cutscene6_played and vincent[form].skill_points > 0:
-                            vincent[form].skill_points -= 1
+                        if session.mouse.left and cutscene5_played and not cutscene6_played and vincent.skill_points > 0:
+                            vincent.skill_points -= 1
                             cutscene6_played = True
                     elif session.mouse.is_in(579, 428, 656, 505):
                         session.screen.blit(tutorial[11], (0,0))
                     if session.keys.escape or session.keys.backspace:
                         show_spellbook = False
 
-                if vincent[form].exp >= 100 and not levelling_up:
-                    vincent[form].exp -= 100
-                    vincent[form].level += 1
-                    vincent[form].skill_points += 1
+                if vincent.exp >= 100 and not levelling_up:
+                    vincent.exp -= 100
+                    vincent.level += 1
+                    vincent.skill_points += 1
                     levelling_up = True
 
                 if levelling_up:
@@ -1957,7 +1959,7 @@ while session.is_running:
                         levelling_up = False
                     levelup_frame += 1
 
-                if not cutscene5_played and vincent[form].level == 2 and not levelling_up:
+                if not cutscene5_played and vincent.level == 2 and not levelling_up:
                     cutscene_playing = True
                     cutscene_start_time = session.uptime
                     current = "cutscene5"
@@ -2004,27 +2006,27 @@ while session.is_running:
                     current = "cutscene7"
 
                 if session.keys.one or session.keys.numpad_one:
-                    firebolt.use(vincent[form])
+                    firebolt.use(vincent)
 
                 if session.keys.r and cutscene4_played and not slime_portal in rooms[2].extras:  # Creating a portal
-                    if vincent[form].orientation == "left" and not (vincent[form].position[0]-1, vincent[form].position[1]) in (current_room.blocked + [(104,25)]) and not vincent[form].position[0]-1 < 0:
-                        portal_x = vincent[form].position[0]-1
-                        portal_y = vincent[form].position[1]
+                    if vincent.orientation == "left" and not (vincent.position[0]-1, vincent.position[1]) in (current_room.blocked + [(104,25)]) and not vincent.position[0]-1 < 0:
+                        portal_x = vincent.position[0]-1
+                        portal_y = vincent.position[1]
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
-                    elif vincent[form].orientation == "up" and not (vincent[form].position[0], vincent[form].position[1]-1) in (current_room.blocked + [(104,25)]) and not vincent[form].position[1]-1 < 0:
-                        portal_y = vincent[form].position[1]-1
-                        portal_x = vincent[form].position[0]
+                    elif vincent.orientation == "up" and not (vincent.position[0], vincent.position[1]-1) in (current_room.blocked + [(104,25)]) and not vincent.position[1]-1 < 0:
+                        portal_y = vincent.position[1]-1
+                        portal_x = vincent.position[0]
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
-                    elif vincent[form].orientation == "right" and not (vincent[form].position[0]+1, vincent[form].position[1]) in (current_room.blocked + [(104,25)]) and not vincent[form].position[0]+1 > current_room.max_coord[0]:
-                        portal_x = vincent[form].position[0]+1
-                        portal_y = vincent[form].position[1]
+                    elif vincent.orientation == "right" and not (vincent.position[0]+1, vincent.position[1]) in (current_room.blocked + [(104,25)]) and not vincent.position[0]+1 > current_room.max_coord[0]:
+                        portal_x = vincent.position[0]+1
+                        portal_y = vincent.position[1]
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
-                    elif vincent[form].orientation == "down" and not (vincent[form].position[0], vincent[form].position[1]+1) in (current_room.blocked + [(104,25)]) and not vincent[form].position[1]+1 > current_room.max_coord[1]:
-                        portal_y = vincent[form].position[1]+1
-                        portal_x = vincent[form].position[0]
+                    elif vincent.orientation == "down" and not (vincent.position[0], vincent.position[1]+1) in (current_room.blocked + [(104,25)]) and not vincent.position[1]+1 > current_room.max_coord[1]:
+                        portal_y = vincent.position[1]+1
+                        portal_x = vincent.position[0]
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
             
