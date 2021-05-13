@@ -286,7 +286,7 @@ def display_dialogue(character, dialogue_number):
 
 # Defining a function to load a save file
 def load_game(savefile):
-    save = open("../Save Files/" + savefile + ".txt", "r")
+    save = open("../saves/" + savefile + ".txt", "r")
     current = save.readline()[:-1]
     if current == "No save data":
         save.close()
@@ -317,7 +317,7 @@ def load_game(savefile):
 
 # Defining a function to save a save file
 def save_game(savefile):
-    save = open("../Save Files/save" + savefile + ".txt", "w")
+    save = open("../saves/save" + savefile + ".txt", "w")
     save.write(current + "\n")
     save.write(current_room.name[-1] + "\n")
     save.write(form + "\n")
@@ -347,7 +347,7 @@ def save_game(savefile):
 # Defining a function to delete save files
 def deletesave(savefile):
     line_number = 0
-    save = open("../Save Files/save" + savefile + ".txt", "r")
+    save = open("../saves/save" + savefile + ".txt", "r")
     while True:
         if save.readline() == "\n":
             number_of_lines = line_number
@@ -356,7 +356,7 @@ def deletesave(savefile):
             line_number += 1
     save.close()
 
-    save = open("../Save Files/save" + savefile + ".txt", "w")
+    save = open("../saves/save" + savefile + ".txt", "w")
     save.write("No save data\n")
     for line in range(number_of_lines - 1):
         save.write("\n")
@@ -612,7 +612,7 @@ class Player(Character):
         current_room = rooms[room]
         self.room = room
         if room == 0:
-            session.audio.sound.play(Audio("portal.ogg", 0.1), loop=-1)
+            session.audio.sound.play(Audio("portal.ogg", 0.1), loop=True)
         self.position = position
 
         
@@ -1458,6 +1458,13 @@ frame = 1   # Storing the current frame as a variable
 
 ## Program window while loop
 while ongoing:
+    for channel, sound in session.audio.sound._currently_playing.items():
+        print(channel)
+        print(channel.get_busy())
+        print(sound.sound)
+        s = channel.get_sound()
+        print(s)
+        print(s is sound.sound)
     current_time = time.time() - start_time
 
     session.mouse.reset_buttons()
@@ -1519,7 +1526,7 @@ while ongoing:
                 elif cutscene_time < 5:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(Audio("thunder.ogg"))
-                        session.audio.sound.play(Audio("portal.ogg", 0.1), loop=-1)
+                        session.audio.sound.play(Audio("portal.ogg", 0.1), loop=True)
                     session.screen.fill((0,0,0))
                     portal.display(current_room, vincent[form])
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-3))))
@@ -1610,7 +1617,7 @@ while ongoing:
                     if not display_dialogue("mysterious", 0):
                         cutscene_start_time = current_time - 116
                 else:
-                    session.audio.music.play(Audio("main.ogg", 0.5))
+                    session.audio._music.play(Audio("main.ogg", 0.5))
                     coordinates_set = False
                     cutscene1_played = True
                     cutscene_playing = False
@@ -1719,7 +1726,7 @@ while ongoing:
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(Audio("thunder.ogg"))
-                        session.audio.sound.play(Audio("portal.ogg", 0.1), loop=-1)
+                        session.audio.sound.play(Audio("portal.ogg", 0.1), loop=True)
                         current_room.extras.remove(slime_portal)
                         current_room.extras.remove(placed_portal)
                         current_room.extras.append(portal_burn)
@@ -1772,7 +1779,7 @@ while ongoing:
                     if not display_dialogue("zaal", 4):
                         cutscene_start_time = current_time - 125
                 else:
-                    session.audio.music.play(Audio("boss.ogg", 0.5))
+                    session.audio._music.play(Audio("boss.ogg", 0.5))
                     firebolt.room = 3
                     cutscene8_played = True
                     cutscene_playing = False
