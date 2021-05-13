@@ -14,7 +14,7 @@ screen = pygame.display.set_mode((1920, 1080), pygame.HWSURFACE | pygame.DOUBLEB
 
 
 from lib.session import Session
-from lib.audio import Audio
+from lib.audio import AudioClip
 
 from lib.loot import Loot
 
@@ -612,7 +612,7 @@ class Player(Character):
         current_room = rooms[room]
         self.room = room
         if room == 0:
-            session.audio.sound.play(Audio("portal.ogg", 0.1), loop=True)
+            session.audio.sound.play(AudioClip("portal.ogg", 0.1), loop=True)
         self.position = position
 
         
@@ -752,7 +752,7 @@ class Ability(Character):
                 self.cooldown = fps*self.max_cooldown
         elif self.dead and zaal_animation == -1 and player.position in [(x,y) for y in range(4,15) for x in range(10,13)]+[(x,y) for y in range(2,4) for x in range(10)]+[(x,y) for y in range(2) for x in range(10,13)]+[(x,y) for y in range(2,4) for x in range(13,20)]:
             zaal_animation = 18
-            session.audio.sound.play(Audio("zaalattack.ogg", 0.2))
+            session.audio.sound.play(AudioClip("zaalattack.ogg", 0.2))
         
     
     def cast(self, player):
@@ -1525,8 +1525,8 @@ while ongoing:
                     session.screen.fill((0,0,0))
                 elif cutscene_time < 5:
                     if not session.audio.sound.is_playing:
-                        session.audio.sound.play(Audio("thunder.ogg"))
-                        session.audio.sound.play(Audio("portal.ogg", 0.1), loop=True)
+                        session.audio.sound.play(AudioClip("thunder.ogg"))
+                        session.audio.sound.play(AudioClip("portal.ogg", 0.1), loop=True)
                     session.screen.fill((0,0,0))
                     portal.display(current_room, vincent[form])
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-3))))
@@ -1537,7 +1537,7 @@ while ongoing:
                         cutscene_start_time = current_time - 10
                 elif cutscene_time < 12:
                     if len(session.audio.sound.currently_playing) < 2:
-                        session.audio.sound.play(Audio("thunder.ogg"))
+                        session.audio.sound.play(AudioClip("thunder.ogg"))
                     current_room.display_room(vincent[form])
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-10))))
                     session.screen.blit(fade_screen, (0,0))
@@ -1584,7 +1584,7 @@ while ongoing:
                     session.screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
                     current_room.extras[5].display(current_room, vincent[form])
                     if cutscene_time > 61 and not session.audio.sound.is_playing:
-                        session.audio.sound.play(Audio("transform.ogg"))
+                        session.audio.sound.play(AudioClip("transform.ogg"))
                 elif cutscene_time < 63.7:                
                     star.display(current_room, vincent[form])
                     session.screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
@@ -1617,7 +1617,7 @@ while ongoing:
                     if not display_dialogue("mysterious", 0):
                         cutscene_start_time = current_time - 116
                 else:
-                    session.audio._music.play(Audio("main.ogg", 0.5))
+                    session.audio._music.play(AudioClip("main.ogg", 0.5))
                     coordinates_set = False
                     cutscene1_played = True
                     cutscene_playing = False
@@ -1627,7 +1627,7 @@ while ongoing:
                 current_room.display_room(vincent[form])
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
-                        session.audio.sound.play(Audio("thunder.ogg"))
+                        session.audio.sound.play(AudioClip("thunder.ogg"))
                         current_room.extras.append(book_item)
                         current_room.extras.append(book_light)
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
@@ -1725,8 +1725,8 @@ while ongoing:
                 firebolt.exist(current_room)
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
-                        session.audio.sound.play(Audio("thunder.ogg"))
-                        session.audio.sound.play(Audio("portal.ogg", 0.1), loop=True)
+                        session.audio.sound.play(AudioClip("thunder.ogg"))
+                        session.audio.sound.play(AudioClip("portal.ogg", 0.1), loop=True)
                         current_room.extras.remove(slime_portal)
                         current_room.extras.remove(placed_portal)
                         current_room.extras.append(portal_burn)
@@ -1751,7 +1751,7 @@ while ongoing:
                 session.screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
-                        session.audio.sound.play(Audio("thunder.ogg"))
+                        session.audio.sound.play(AudioClip("thunder.ogg"))
                     fade_screen.fill((255, 255, 255, int(255*(1-0.5*cutscene_time))))
                     session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10:                    
@@ -1779,7 +1779,7 @@ while ongoing:
                     if not display_dialogue("zaal", 4):
                         cutscene_start_time = current_time - 125
                 else:
-                    session.audio._music.play(Audio("boss.ogg", 0.5))
+                    session.audio._music.play(AudioClip("boss.ogg", 0.5))
                     firebolt.room = 3
                     cutscene8_played = True
                     cutscene_playing = False
@@ -1789,7 +1789,7 @@ while ongoing:
                 current_room.display_room(vincent[form])
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
-                        session.audio.sound.play(Audio("thunder.ogg"))
+                        session.audio.sound.play(AudioClip("thunder.ogg"))
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
                     session.screen.blit(fade_screen, (0,0))
                 else:

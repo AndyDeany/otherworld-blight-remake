@@ -1,40 +1,59 @@
+"""Module containing classes for processing and playing of pygame audio clips."""
+
 from multiprocessing.dummy import Pool
 
 import pygame
 
 
+PYGAME_MIN_VOLUME = 0.0078125
+
+
 def pygame_volume(volume):
     """Convert the given volume to one that can be fed to pygame.mixer's set_volume() method."""
     volume *= 0.0001    # Adjusting from percentage²
-    if 0.0005 < volume < 0.0078125:
-        volume = 0.0078125  # pygame's min volume. This stops it going silent when volume is low but not muted.
+    if 0.0005 < volume < PYGAME_MIN_VOLUME:
+        volume = PYGAME_MIN_VOLUME  # This stops it going silent when volume is low but not muted.
     return volume
 
 
-class Audio:
+class AudioClip:
     """Class for representing and containing an audio clip."""
 
+    _BASE_PATH = "../audio/"
+
     def __init__(self, file_name, volume_multiplier=1.0, *, load_async=True):
-        self.path = f"../audio/{file_name}"
+        """Create an AudioClip instance.
+
+        file_name: the relative path to the audio file from with audio/ directory.
+        volume_multiplier: adjust the base volume of this clip if it is naturally too loud.
+        load_async: whether to load the clip asynchronously.
+        """
+        self.path = self._BASE_PATH + file_name
         if load_async:
             self.sound_pool = Pool(processes=1).apply_async(pygame.mixer.Sound, [self.path])
             self._sound = None
         else:
             self._sound = pygame.mixer.Sound(self.path)
-        self.volume_multiplier = volume_multiplier  # Used for adjusting tracks that are naturally too loud/quiet
+        self.volume_multiplier = volume_multiplier
 
     @property
     def sound(self):
+        """Get the pygame.mixer.Sound object for this audio clip."""
         if self._sound is None:
             self._sound = self.sound_pool.get(10)
         return self._sound
 
     @property
     def is_loaded(self):
+        """Get whether the pygame.mixer.Sound object for this audio clip has finished loading."""
         return self.sound_pool.ready()
 
     def play(self, channel, *, loop: bool, fade: bool):
-        """Play the audio clip. Loops indefinitely if loop is True. Fades in if fade is True."""
+        """Play the audio clip in the given channel.
+
+        loop: whether or not to loop the audio clip indefinitely.
+        fade: whether or not to fade the audio clip in.
+        """
         channel.play(self.sound, -1 if loop else 0, fade_ms=1000 if fade else 0)
 
     def set_volume(self, volume):
@@ -46,6 +65,7 @@ class AudioController:
     """Class for controlling audio playback in the game."""
 
     def __init__(self):
+        """Create an AudioController instance."""
         self.is_muted = False
         self.master_volume = 100
         self.music = AudioType(self, stops=True, loops=True, fades=True)
@@ -81,56 +101,67 @@ class AudioController:
 
 
 class AudioType:
-    """Class representing a type of audio - music, sfx, voice, etc.
-
-    The `stops` parameter decides whether or not previously playing audio is stopped when playing a new one.
-    The `loops` parameter decides whether or not the audio loops by default.
-    The `fades` parameter decides whether or not new audio fades in by default.
-    """
+    """Class representing a type of audio - music, sfx, voice, etc."""
 
     def __init__(self, music, stops=False, loops=False, fades=False):
-        self.music = music
-        self.stored_volume = None
+        """Create an AudioType instance.
+
+        The `stops` parameter decides whether or not previously
+        playing audio is stopped when a new one is played.
+        The `loops` parameter decides whether or not the audio loops by default.
+        The `fades` parameter decides whether or not new audio fades in by default.
+        """
+        self._music = music
+        self._stored_volume = None
 
         self._currently_playing = {}
         self.volume = 100
 
-        self.stops = stops
-        self.loops = loops
-        self.fades = fades
+        self._stops = stops
+        self._loops = loops
+        self._fades = fades
 
     @property
     def volume(self):
+        """Get the current volume of this audio type."""
         return self._volume
 
     @volume.setter
     def volume(self, value):
+        """Set the current volume of this audio type."""
         self._volume = value
         for audio in self.currently_playing.values():
-            audio.set_volume(self.music.master_volume * value)
+            audio.set_volume(self._music.master_volume * value)
 
     @property
     def currently_playing(self):
-        for channel in self._currently_playing.copy():
-            if not channel.get_busy():
+        """Get a dictionary of {channel: audio} pairs.
+
+        The channels show channels that are currently playing clips of this audio type.
+        Their corresponding audios show which audio clip they are playing.
+        """
+        for channel, audio in self._currently_playing.copy().items():
+            if channel.get_sound() is not audio.sound:
                 self._currently_playing.pop(channel)
         return self._currently_playing
 
     @property
     def is_muted(self):
+        """Return whether or not this audio type is muted."""
         return self.volume == 0
 
     @property
     def is_playing(self):
+        """Get whether or not any clips of this audio type are currently playing."""
         return bool(self.currently_playing)
 
-    def play(self, audio: Audio, *, loop=None, fade=None):
+    def play(self, audio: AudioClip, *, loop=None, fade=None):
         """Play the given song on loop. Mainly for BGM purposes."""
-        loop = self.loops if loop is None else loop
-        fade = self.fades if fade is None else fade
-        if self.stops:
+        loop = self._loops if loop is None else loop
+        fade = self._fades if fade is None else fade
+        if self._stops:
             self.stop()
-        audio.set_volume(self.music.master_volume * self.volume)
+        audio.set_volume(self._music.master_volume * self.volume)
         channel = pygame.mixer.find_channel()
         audio.play(channel, loop=loop, fade=fade)
         self.currently_playing[channel] = audio
@@ -142,25 +173,25 @@ class AudioType:
 
     def pause(self):
         """Pause the currently playing audio."""
-        for channel in self.currently_playing.keys():
+        for channel in self.currently_playing:
             channel.pause()
 
     def unpause(self):
         """Unpause the currently paused audio."""
-        for channel in self.currently_playing.keys():
+        for channel in self.currently_playing:
             channel.unpause()
 
     def mute(self):
         """Mute this audio type."""
-        self.stored_volume = self.volume
+        self._stored_volume = self.volume
         self.volume = 0
 
     def unmute(self):
         """Unmute this audio type."""
-        if self.stored_volume is None:
-            raise ValueError("No stored_volume found - unmute() should not have been called.")
-        self.volume = self.stored_volume
-        self.stored_volume = None
+        if self._stored_volume is None:
+            raise ValueError("No stored volume found - unmute() should not have been called.")
+        self.volume = self._stored_volume
+        self._stored_volume = None
 
     def toggle_mute(self):
         """Mute this audio type if it's unmuted, unmute it if it's muted."""
