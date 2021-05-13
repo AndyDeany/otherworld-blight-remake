@@ -1,11 +1,10 @@
 import ctypes
 
-from lib.keys import Keys
-from lib.mouse import Mouse
-from lib.music import Music, Audio
-
-import moviepy
 from moviepy.editor import VideoFileClip
+
+from lib.session import Session
+from lib.audio import Audio
+
 
 
 # Defining the error logging function
@@ -43,8 +42,6 @@ def load(file_name):
 
     if file_type == "png":
         return pygame.image.load("../images/" + file_name).convert_alpha()
-    elif file_type == "ogg":
-        pygame.mixer.music.load("../Sound Files/" + file_name)
     elif file_type == "mpg":
         return VideoFileClip("../Video Files/" + file_name).subclip(0, 3)
     else:
@@ -67,6 +64,7 @@ from operator import attrgetter
 ### ---------- VARIABLE ASSIGNMENT - START ---------- ###
 
 ## Assigning essential game variables
+session = Session()
 fps = 30
 error_time = 0
 display_loot_menu = False
@@ -130,16 +128,12 @@ def reinitialise_screen(resolution=(screen_width,screen_height), mode="fullscree
 pygame.display.set_caption("Spietz (Alpha 1.0)")
 pygame.display.set_icon(load("game_icon.png"))   # Setting the icon for the game window
 
-keys = Keys()
-mouse = Mouse()
-music = Music()
-
 ### ---------- FUNCTION DEFINING - START ---------- ###
 
 # Checking if the given arrow key has been held down the longest
 def is_longest_held(direction_held_time):
-    longest = max(keys.left_arrow.time_held, keys.right_arrow.time_held, keys.up_arrow.time_held, keys.down_arrow.time_held, keys.a.time_held,
-                  keys.d.time_held, keys.w.time_held, keys.s.time_held)
+    longest = max(session.keys.left_arrow.time_held, session.keys.right_arrow.time_held, session.keys.up_arrow.time_held, session.keys.down_arrow.time_held, session.keys.a.time_held,
+                  session.keys.d.time_held, session.keys.w.time_held, session.keys.s.time_held)
     return direction_held_time == longest
 
 
@@ -257,7 +251,7 @@ def display_loot():
     """returns False when the loot menu is closed"""
     global loot, current_loot_slot
 
-    if keys.escape or keys.backspace:
+    if session.keys.escape or session.keys.backspace:
         return False
 
     screen.blit(loot_images["loot" + str(current_loot_slot)], (0, 0))
@@ -268,15 +262,15 @@ def display_loot():
 
     screen.blit(loot_images["controls"], (0, 0))
 
-    if (keys.up_arrow or keys.w) and current_loot_slot > 0:
+    if (session.keys.up_arrow or session.keys.w) and current_loot_slot > 0:
         current_loot_slot -= 1
-    if (keys.down_arrow or keys.s) and current_loot_slot < 5:
+    if (session.keys.down_arrow or session.keys.s) and current_loot_slot < 5:
         current_loot_slot += 1
 
-    if keys.enter and loot[current_loot_slot] != "":
+    if session.keys.enter and loot[current_loot_slot] != "":
         inventory.append(loot[current_loot_slot])
         loot[current_loot_slot] = ""
-    if keys.e:
+    if session.keys.e:
         for item in loot:
             if item != "":
                 inventory.append(item)
@@ -322,7 +316,7 @@ def display_hud():
 def display_dialogue(character, dialogue_number):
     screen.blit(dialogue[character + "box"], (0, 0))
     screen.blit(dialogue[character + str(dialogue_number)], (765, 895))
-    if keys.space or keys.enter or keys.numpad_enter:
+    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
         return False
     return True
 
@@ -453,23 +447,23 @@ class Menu:
     def change_selection(self):
         global movement_started
         for index in range(len(self.options)):
-            if mouse.is_in(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
+            if session.mouse.is_in(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
                 self.current_selection = index
                 return
 
-        if (keys.up_arrow or keys.w) and self.current_selection > 0:
+        if (session.keys.up_arrow or session.keys.w) and self.current_selection > 0:
             self.current_selection -= 1
-        if (keys.down_arrow or keys.s) and self.current_selection < len(self.options) - 1:
+        if (session.keys.down_arrow or session.keys.s) and self.current_selection < len(self.options) - 1:
             self.current_selection += 1
     
     def change_settings(self):
-        if mouse.left.is_pressed:
+        if session.mouse.left.is_pressed:
             global movement_started
             if not movement_started:
-                self.original_x = mouse.x
+                self.original_x = session.mouse.x
                 slider_selected = False
                 for index in range(len(self.options)):
-                    if mouse.is_in(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
+                    if session.mouse.is_in(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
                         self.current_selection = index
                         if self.sliders[self.current_selection][0]:
                             slider_selected = True
@@ -477,35 +471,35 @@ class Menu:
                     return
                 movement_started = True
             else:
-                if self.settings[self.current_selection] + mouse.x - self.original_x < 0:
+                if self.settings[self.current_selection] + session.mouse.x - self.original_x < 0:
                     self.settings[self.current_selection] = 0
-                elif self.settings[self.current_selection] + mouse.x - self.original_x > 100:
+                elif self.settings[self.current_selection] + session.mouse.x - self.original_x > 100:
                     self.settings[self.current_selection] = 100
                 else:
-                    self.settings[self.current_selection] = mouse.x - self.original_x
+                    self.settings[self.current_selection] = session.mouse.x - self.original_x
 
         elif self.sliders[self.current_selection][0]:
-            if (keys.left_arrow or keys.left_arrow.is_pressed or keys.a or keys.a.is_pressed) and self.settings[self.current_selection] > 0:
+            if (session.keys.left_arrow or session.keys.left_arrow.is_pressed or session.keys.a or session.keys.a.is_pressed) and self.settings[self.current_selection] > 0:
                 self.settings[self.current_selection] -= 1
-            if (keys.right_arrow or keys.right_arrow.is_pressed or keys.d or keys.d.is_pressed) and self.settings[self.current_selection] < 100:
+            if (session.keys.right_arrow or session.keys.right_arrow.is_pressed or session.keys.d or session.keys.d.is_pressed) and self.settings[self.current_selection] < 100:
                 self.settings[self.current_selection] += 1
         else:
-            if (keys.left_arrow or keys.a) and self.settings[self.current_selection] > 0:
+            if (session.keys.left_arrow or session.keys.a) and self.settings[self.current_selection] > 0:
                 self.settings[self.current_selection] -= 1
-            if (keys.right_arrow or keys.d) and self.settings[self.current_selection] < len(self.options[self.current_selection]) - 1:
+            if (session.keys.right_arrow or session.keys.d) and self.settings[self.current_selection] < len(self.options[self.current_selection]) - 1:
                 self.settings[self.current_selection] += 1
     
     # Checks if the user has issued a continue command (by clicking or pressing enter/spacebar)
     def check_action(self):
         """returns True if current is changed"""
         global current
-        if mouse.left or keys.space or keys.enter or keys.numpad_enter:
+        if session.mouse.left or session.keys.space or session.keys.enter or session.keys.numpad_enter:
             current = self.actions[self.current_selection]
             return True
     
     def check_escape(self):
         global current
-        if keys.escape:
+        if session.keys.escape:
             current = self.escape_action
 
 
@@ -597,10 +591,10 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
             return selected_image
         else:
             return self.frames[(self.movement_cooldown * (len(self.frames)-1) * self.movespeed + (3*fps) - 1 +
-                                int((keys.left_arrow.is_pressed or keys.right_arrow.is_pressed or
-                                     keys.up_arrow.is_pressed or keys.down_arrow.is_pressed or
-                                     keys.a.is_pressed or keys.d.is_pressed or
-                                     keys.w.is_pressed or keys.s.is_pressed)
+                                int((session.keys.left_arrow.is_pressed or session.keys.right_arrow.is_pressed or
+                                     session.keys.up_arrow.is_pressed or session.keys.down_arrow.is_pressed or
+                                     session.keys.a.is_pressed or session.keys.d.is_pressed or
+                                     session.keys.w.is_pressed or session.keys.s.is_pressed)
                                 and not(self.movement_cooldown == (3*fps)//self.movespeed)))//(3*fps)][self.orientation]
     
     # Changes the character's image to reflect the character's current disposition
@@ -621,26 +615,26 @@ class Player(Character):
     # Changing the direction in which the player is facing. This is useful for directing the player's abilities
     def change_orientation(self):
         if not self.movement_cooldown:
-            if keys.left_arrow or keys.a:
+            if session.keys.left_arrow or session.keys.a:
                 self.orientation = "left"
-            if keys.right_arrow or keys.d:
+            if session.keys.right_arrow or session.keys.d:
                 self.orientation = "right"
-            if keys.up_arrow or keys.w:
+            if session.keys.up_arrow or session.keys.w:
                 self.orientation = "up"
-            if keys.down_arrow or keys.s:
+            if session.keys.down_arrow or session.keys.s:
                 self.orientation = "down"
     
     # Changing the player's x and y grid coordinates according to user input
     def change_position(self, room):
         if self.movement_cooldown:  # decrementing self.movement cooldown if it is not equal to 0
             self.movement_cooldown -= 1
-        elif ((keys.left_arrow.time_held > 1/fps or keys.a.time_held > 1/fps) or ((keys.left_arrow.time_held or keys.a.time_held) and self.orientation == "left")) and (is_longest_held(keys.left_arrow.time_held) or is_longest_held(keys.a.time_held)):
+        elif ((session.keys.left_arrow.time_held > 1/fps or session.keys.a.time_held > 1/fps) or ((session.keys.left_arrow.time_held or session.keys.a.time_held) and self.orientation == "left")) and (is_longest_held(session.keys.left_arrow.time_held) or is_longest_held(session.keys.a.time_held)):
             self.move(room, "left")
-        elif ((keys.right_arrow.time_held > 1/fps or keys.d.time_held > 1/fps) or ((keys.right_arrow.time_held or keys.d.time_held) and self.orientation == "right")) and (is_longest_held(keys.right_arrow.time_held) or is_longest_held(keys.d.time_held)):
+        elif ((session.keys.right_arrow.time_held > 1/fps or session.keys.d.time_held > 1/fps) or ((session.keys.right_arrow.time_held or session.keys.d.time_held) and self.orientation == "right")) and (is_longest_held(session.keys.right_arrow.time_held) or is_longest_held(session.keys.d.time_held)):
             self.move(room, "right")
-        elif ((keys.up_arrow.time_held > 1/fps or keys.w.time_held > 1/fps) or ((keys.up_arrow.time_held or keys.w.time_held) and self.orientation == "up")) and (is_longest_held(keys.up_arrow.time_held) or is_longest_held(keys.w.time_held)):
+        elif ((session.keys.up_arrow.time_held > 1/fps or session.keys.w.time_held > 1/fps) or ((session.keys.up_arrow.time_held or session.keys.w.time_held) and self.orientation == "up")) and (is_longest_held(session.keys.up_arrow.time_held) or is_longest_held(session.keys.w.time_held)):
             self.move(room, "up")
-        elif ((keys.down_arrow.time_held > 1/fps or keys.s.time_held > 1/fps) or ((keys.down_arrow.time_held or keys.s.time_held) and self.orientation == "down")) and (is_longest_held(keys.down_arrow.time_held) or is_longest_held(keys.s.time_held)):
+        elif ((session.keys.down_arrow.time_held > 1/fps or session.keys.s.time_held > 1/fps) or ((session.keys.down_arrow.time_held or session.keys.s.time_held) and self.orientation == "down")) and (is_longest_held(session.keys.down_arrow.time_held) or is_longest_held(session.keys.s.time_held)):
             self.move(room, "down")
     
     def check_exit(self, room):
@@ -651,11 +645,11 @@ class Player(Character):
     
     def join(self, room, position):
         global current_room
-        music.sound.stop()
+        session.audio.sound.stop()
         current_room = rooms[room]
         self.room = room
         if room == 0:
-            music.sound.play(Audio("portal.ogg", 0.1), loop=-1)
+            session.audio.sound.play(Audio("portal.ogg", 0.1), loop=-1)
         self.position = position
 
         
@@ -795,7 +789,7 @@ class Ability(Character):
                 self.cooldown = fps*self.max_cooldown
         elif self.dead and zaal_animation == -1 and player.position in [(x,y) for y in range(4,15) for x in range(10,13)]+[(x,y) for y in range(2,4) for x in range(10)]+[(x,y) for y in range(2) for x in range(10,13)]+[(x,y) for y in range(2,4) for x in range(13,20)]:
             zaal_animation = 18
-            music.sound.play(Audio("zaalattack.ogg", 0.2))
+            session.audio.sound.play(Audio("zaalattack.ogg", 0.2))
         
     
     def cast(self, player):
@@ -1346,18 +1340,18 @@ inventory = [] # The characters inventory
 number_drops = []   # The list of current number drops
 menus = {"main menu":Menu("main", ["title"],
                           [["play"], ["options"], ["controls"], ["exit"]],
-                          [(620,1300,605,648), (620,1300,663,706), (620,1300,717,760), (620,1300,774,817)],
+                          [(620, 605, 1300, 648), (620, 663, 1300, 706), (620, 717, 1300, 760), (620, 774, 1300, 817)],
                           ["saves menu", "options menu", "controls", "exit"], "sure quit?"),
          "options menu":Menu("options", ["headings", "apply reset", "sliders"],
                              [["SLIDER278"], ["SLIDER335"], ["SLIDER392"], ["SLIDER449"], ["windowed", "borderless", "fullscreen"],
                                 ["800x600", "1024x768", "1152x864", "1280x720", "1280x768", "1280x1024", "1366x768", "1600x900", "1600x1024", "1680x1050", "1920x1080"],
                                 ["SLIDER669"], ["subs_on", "subs_off"], ["damage_on", "damage_off"], ["apply", "reset"]],
-                             [(123,123,123,123), (123,123,123,123), (123,123,123,123), (123,123,123,123), (123,123,123,123), (123,123,123,123), (123,123,123,123), (123,123,123,123), (123,123,123,123), (123,123,123,123)],
+                             [(123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123)],
                              ["options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu"],
                              "main menu", [50, 100, 100, 100, 1, 10, 100, 0, 0, 0]),
          "saves menu":Menu("saves", [],
                             [["slot0"], ["slot1"], ["slot2"], ["slot3"]],
-                            [(525,1413,255,386), (525,1413,433,564), (525,1413,611,742), (525,1413,789,920)],
+                            [(525, 255, 1413, 386), (525, 433, 1413, 564), (525, 611, 1413, 742), (525, 789, 1413, 920)],
                             ["save0", "save1", "save2", "save3"], "main menu")}
 
 # Extras that need to be displayed during cutscenes
@@ -1516,27 +1510,27 @@ frame = 1   # Storing the current frame as a variable
 while ongoing:
     current_time = time.time() - start_time
 
-    mouse.reset_buttons()
-    mouse.update_coordinates()
-    keys.reset()
+    session.mouse.reset_buttons()
+    session.mouse.update_coordinates()
+    session.keys.reset()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             ongoing = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            mouse.process_button_down(event)
+            session.mouse.process_button_down(event)
         elif event.type == pygame.MOUSEBUTTONUP:
-            mouse.process_button_up(event)
+            session.mouse.process_button_up(event)
         elif event.type == pygame.KEYDOWN:
-            keys.process_key_down(event)
+            session.keys.process_key_down(event)
         elif event.type == pygame.KEYUP:
-            keys.process_key_up(event)
+            session.keys.process_key_up(event)
     ## Handling user inputs/Displaying the game
     if frame == 1:
         introduction.preview()
 
     # elif introduction.get_busy():   # Checking to see that the introduction video hasn't stopped playing for whatever reason
-    #     if keys.escape or keys.space or keys.enter or keys.numpad_enter:
+    #     if session.keys.escape or session.keys.space or session.keys.enter or session.keys.numpad_enter:
     #         introduction.stop()
             
     else:
@@ -1547,17 +1541,17 @@ while ongoing:
             if not menus[current].check_action():
                 menus[current].check_escape()
             # Changing the volume levels according to what the option menu says
-            music.master_volume = menus["options menu"].settings[0]
-            music.sound_volume = menus["options menu"].settings[1]
-            music.music_volume = menus["options menu"].settings[2]
-            music.voice_volume = menus["options menu"].settings[3]
+            session.audio.master_volume = menus["options menu"].settings[0]
+            session.audio.sound_volume = menus["options menu"].settings[1]
+            session.audio.music_volume = menus["options menu"].settings[2]
+            session.audio.voice_volume = menus["options menu"].settings[3]
                 
         elif current == "controls":
             screen.blit(menus["main menu"].background, (0,0))
             screen.blit(controls_page, (0,0))
             screen.blit(esc_exit, (0,0))
             
-            if keys.escape or keys.backspace:
+            if session.keys.escape or session.keys.backspace:
                 current = "main menu"
                 
         elif current[0:4] == "save":
@@ -1573,9 +1567,9 @@ while ongoing:
                 if cutscene_time < 3:
                     screen.fill((0,0,0))
                 elif cutscene_time < 5:
-                    if not music.sound.is_playing:
-                        music.sound.play(Audio("thunder.ogg"))
-                        music.sound.play(Audio("portal.ogg", 0.1), loop=-1)
+                    if not session.audio.sound.is_playing:
+                        session.audio.sound.play(Audio("thunder.ogg"))
+                        session.audio.sound.play(Audio("portal.ogg", 0.1), loop=-1)
                     screen.fill((0,0,0))
                     portal.display(current_room, vincent[form])
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-3))))
@@ -1585,8 +1579,8 @@ while ongoing:
                     if not display_dialogue("vincent", 0):
                         cutscene_start_time = current_time - 10
                 elif cutscene_time < 12:
-                    if not music.sound.is_playing:
-                        music.sound.play(Audio("thunder.ogg"))
+                    if len(session.audio.sound.currently_playing) < 2:
+                        session.audio.sound.play(Audio("thunder.ogg"))
                     current_room.display_room(vincent[form])
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-10))))
                     screen.blit(fade_screen, (0,0))
@@ -1597,7 +1591,7 @@ while ongoing:
                 elif cutscene_time < 10017:
                     current_room.display_room(vincent[form])
                     screen.blit(tutorial[0], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 10017
                 else:
                     cutscene0_played = True
@@ -1632,8 +1626,8 @@ while ongoing:
                     star.display(current_room, vincent[form])
                     screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
                     current_room.extras[5].display(current_room, vincent[form])
-                    if cutscene_time > 61 and not music.sound.is_playing:
-                        music.sound.play(Audio("transform.ogg"))
+                    if cutscene_time > 61 and not session.audio.sound.is_playing:
+                        session.audio.sound.play(Audio("transform.ogg"))
                 elif cutscene_time < 63.7:                
                     star.display(current_room, vincent[form])
                     screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
@@ -1666,7 +1660,7 @@ while ongoing:
                     if not display_dialogue("mysterious", 0):
                         cutscene_start_time = current_time - 116
                 else:
-                    music.music.play(Audio("main.ogg", 0.5))
+                    session.audio.music.play(Audio("main.ogg", 0.5))
                     coordinates_set = False
                     cutscene1_played = True
                     cutscene_playing = False
@@ -1675,15 +1669,15 @@ while ongoing:
             elif current[8] == "2":
                 current_room.display_room(vincent[form])
                 if cutscene_time < 2:
-                    if not music.sound.is_playing:
-                        music.sound.play(Audio("thunder.ogg"))
+                    if not session.audio.sound.is_playing:
+                        session.audio.sound.play(Audio("thunder.ogg"))
                         current_room.extras.append(book_item)
                         current_room.extras.append(book_light)
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
                     screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10002:
                     screen.blit(tutorial[1], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 10002
                 else:
                     cutscene2_played = True
@@ -1695,39 +1689,39 @@ while ongoing:
                 if cutscene_time < 10000:
                     display_spellbook()
                     screen.blit(tutorial[2], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 10000
                 elif cutscene_time < 20000:
                     display_hud()
                     screen.blit(hud_images["firebolt"], (760, 1029))
                     display_spellbook()
-                    if keys.escape or keys.backspace:
+                    if session.keys.escape or session.keys.backspace:
                         cutscene_start_time = current_time - 20000
                 elif cutscene_time < 30000:
                     screen.blit(tutorial[3], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 30000
                 elif cutscene_time < 40000:
                     screen.blit(tutorial[4], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 40000
                 elif cutscene_time < 50000:
                     screen.blit(tutorial[5], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 50000
                 elif cutscene_time < 60000:
                     screen.blit(tutorial[6], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 60000
                 elif cutscene_time < 70000:
                     screen.blit(tutorial[7], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 70000
                 elif cutscene_time < 80000:
                     display_hud()                    
                     screen.blit(hud_images["firebolt"], (760, 1029))
                     screen.blit(tutorial[8], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 80000
                 else:
                     display_hud()
@@ -1746,7 +1740,7 @@ while ongoing:
                         cutscene_start_time = current_time - 25
                 elif cutscene_time < 10025:
                     screen.blit(tutorial[9], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 10025
                 else:
                     vincent[form].exp += 35
@@ -1762,7 +1756,7 @@ while ongoing:
                 current_room.display_room(vincent[form])
                 if cutscene_time < 10000:
                     screen.blit(tutorial[10], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 10000
                 else:
                     cutscene5_played = True
@@ -1773,9 +1767,9 @@ while ongoing:
                 current_room.display_room(vincent[form])
                 firebolt.exist(current_room)
                 if cutscene_time < 2:
-                    if not music.sound.is_playing:
-                        music.sound.play(Audio("thunder.ogg"))
-                        music.sound.play(Audio("portal.ogg", 0.1), loop=-1)
+                    if not session.audio.sound.is_playing:
+                        session.audio.sound.play(Audio("thunder.ogg"))
+                        session.audio.sound.play(Audio("portal.ogg", 0.1), loop=-1)
                         current_room.extras.remove(slime_portal)
                         current_room.extras.remove(placed_portal)
                         current_room.extras.append(portal_burn)
@@ -1799,8 +1793,8 @@ while ongoing:
                 current_room.display_room(vincent[form])                
                 screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
                 if cutscene_time < 2:
-                    if not music.sound.is_playing:
-                        music.sound.play(Audio("thunder.ogg"))
+                    if not session.audio.sound.is_playing:
+                        session.audio.sound.play(Audio("thunder.ogg"))
                     fade_screen.fill((255, 255, 255, int(255*(1-0.5*cutscene_time))))
                     screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10:                    
@@ -1828,7 +1822,7 @@ while ongoing:
                     if not display_dialogue("zaal", 4):
                         cutscene_start_time = current_time - 125
                 else:
-                    music.music.play(Audio("boss.ogg", 0.5))
+                    session.audio.music.play(Audio("boss.ogg", 0.5))
                     firebolt.room = 3
                     cutscene8_played = True
                     cutscene_playing = False
@@ -1837,8 +1831,8 @@ while ongoing:
             elif current[8] == "9":
                 current_room.display_room(vincent[form])
                 if cutscene_time < 2:
-                    if not music.sound.is_playing:
-                        music.sound.play(Audio("thunder.ogg"))
+                    if not session.audio.sound.is_playing:
+                        session.audio.sound.play(Audio("thunder.ogg"))
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
                     screen.blit(fade_screen, (0,0))
                 else:
@@ -1914,9 +1908,9 @@ while ongoing:
                     screen.blit(credits_images[6], (0,0))
                 else:
                     screen.blit(credits_images[6], (0,0))
-                    if keys.space or keys.enter or keys.numpad_enter:                        
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:                        
                         cutscene_playing = False
-                        music.stop()
+                        session.audio.stop()
                         current = "main menu"   #(maybe), prolly go to credits isnt it
         
         elif current == "dead":
@@ -1998,7 +1992,7 @@ while ongoing:
                     if zaal_life <= 0:
                         cutscene_playing = True
                         cutscene_start_time = current_time
-                        pygame.mixer.music.stop()
+                        pygame.mixer.mixer.stop()
                         current_room.extras.append(portal)
                         portal.x = 900
                         portal.y = 600
@@ -2007,7 +2001,7 @@ while ongoing:
                 if display_loot_menu:
                     if not display_loot():
                         display_loot_menu = False
-                elif keys.escape and not show_spellbook:    # Opening the in game options menu upon escape being pressed
+                elif session.keys.escape and not show_spellbook:    # Opening the in game options menu upon escape being pressed
                     current = "in game options menu"
 
                 if show_hud:
@@ -2023,14 +2017,16 @@ while ongoing:
 
                 if show_spellbook:
                     display_spellbook()
-                    if mouse.is_in(748,825,499,576):
+                    print(1)
+                    if session.mouse.is_in(748, 499, 825, 576):
+                        print(2)
                         screen.blit(tutorial[12], (0,0))
-                        if mouse.left and cutscene5_played and not cutscene6_played and vincent[form].skill_points > 0:
+                        if session.mouse.left and cutscene5_played and not cutscene6_played and vincent[form].skill_points > 0:
                             vincent[form].skill_points -= 1
                             cutscene6_played = True
-                    elif mouse.is_in(579,656,428,505):
+                    elif session.mouse.is_in(579, 428, 656, 505):
                         screen.blit(tutorial[11], (0,0))
-                    if keys.escape or keys.backspace:
+                    if session.keys.escape or session.keys.backspace:
                         show_spellbook = False
 
                 if vincent[form].exp >= 100 and not levelling_up:
@@ -2066,10 +2062,10 @@ while ongoing:
                     current_room.extras.remove(drop)
                     mean_slime.position = (-10,-10)
 
-                if keys.tab and not show_spellbook:
+                if session.keys.tab and not show_spellbook:
                     show_spellbook = True
 
-                if keys.e:
+                if session.keys.e:
                     if not cutscene3_played:
                         if is_interactable((46,20)):
                             current_room.extras.remove(book_item)
@@ -2097,10 +2093,10 @@ while ongoing:
                     cutscene_start_time = current_time
                     current = "cutscene7"
 
-                if keys.one or keys.numpad_one:
+                if session.keys.one or session.keys.numpad_one:
                     firebolt.use(vincent[form])
 
-                if keys.r and cutscene4_played and not slime_portal in rooms[2].extras:  # Creating a portal
+                if session.keys.r and cutscene4_played and not slime_portal in rooms[2].extras:  # Creating a portal
                     if vincent[form].orientation == "left" and not (vincent[form].position[0]-1, vincent[form].position[1]) in (current_room.blocked + [(104,25)]) and not vincent[form].position[0]-1 < 0:
                         portal_x = vincent[form].position[0]-1
                         portal_y = vincent[form].position[1]

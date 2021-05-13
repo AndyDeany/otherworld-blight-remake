@@ -42,7 +42,7 @@ class Audio:
         self.sound.set_volume(pygame_volume(volume * self.volume_multiplier))
 
 
-class Music:
+class AudioController:
     """Class for controlling audio playback in the game."""
 
     def __init__(self):
@@ -92,7 +92,7 @@ class AudioType:
         self.music = music
         self.stored_volume = None
 
-        self.currently_playing = {}
+        self._currently_playing = {}
         self.volume = 100
 
         self.stops = stops
@@ -110,12 +110,19 @@ class AudioType:
             audio.set_volume(self.music.master_volume * value)
 
     @property
+    def currently_playing(self):
+        for channel in self._currently_playing.copy():
+            if not channel.get_busy():
+                self._currently_playing.pop(channel)
+        return self._currently_playing
+
+    @property
     def is_muted(self):
         return self.volume == 0
 
     @property
     def is_playing(self):
-        return any((channel.get_busy() for channel in self.currently_playing.keys()))
+        return bool(self.currently_playing)
 
     def play(self, audio: Audio, *, loop=None, fade=None):
         """Play the given song on loop. Mainly for BGM purposes."""
