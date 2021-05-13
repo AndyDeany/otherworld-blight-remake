@@ -32,10 +32,9 @@ def log(error, error_message):
         ctypes.windll.user32.MessageBoxW(0, "An error has occurred:\n\n    " + error_message + ".\n\n\nThis error occurred very early during game initialisation and could not be logged.", "Error", 1)
         raise
 
-    global ongoing              # Also temporary
-    ongoing = False             # Also temporary
+    session.is_running = False             # temporary
     if False and pygame.display.get_surface() is not None and error_message != "Failed to display error message":
-        error_time = 3*fps
+        error_time = 3*session.fps
     # add some error sound to play here
     else:   # Creating a window to inform the user that error has occurred
         ctypes.windll.user32.MessageBoxW(0, "An error has occurred:\n\n    " + error_message + ".\n\n\nPlease check log.txt for details.", "Error", 1)
@@ -60,12 +59,10 @@ def load(file_name):
         raise Exception("Invalid file type")
 
 
-
 ### ---------- VARIABLE ASSIGNMENT - START ---------- ###
 
 ## Assigning essential game variables
 session = Session(screen)
-fps = 30
 error_time = 0
 show_hud = False
 show_spellbook = False
@@ -105,6 +102,7 @@ MONITOR_HEIGHT = screen_height
 
 fade_screen = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)    # An extra surface for put on top of the screen, for fading
 
+
 # Changes and reinitialises the screen with new settings
 def reinitialise_screen(resolution=(screen_width,screen_height), mode="fullscreen"):
     global screen, screen_width, screen_height
@@ -120,9 +118,6 @@ def reinitialise_screen(resolution=(screen_width,screen_height), mode="fullscree
     else:
         raise ValueError("Unknown mode for reinitialise_screen(): " + mode + "[coding syntax error].")
 
-
-pygame.display.set_caption("Spietz (Alpha 1.0)")
-pygame.display.set_icon(load("game_icon.png"))   # Setting the icon for the game window
 
 ### ---------- FUNCTION DEFINING - START ---------- ###
 
@@ -140,38 +135,38 @@ def add_movement(self, character, axis, file_type):
         if axis == "x":
             if character.orientation == "left":
                 return character.x + (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
-                            3 * fps)
+                            3 * session.fps)
             elif character.orientation == "right":
                 return character.x - (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
-                            3 * fps)
+                            3 * session.fps)
             else:
                 return character.x
         elif axis == "y":
             if character.orientation == "up":
                 return character.y + (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
-                            3 * fps)
+                            3 * session.fps)
             elif character.orientation == "down":
                 return character.y - (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
-                            3 * fps)
+                            3 * session.fps)
             else:
                 return character.y
     elif file_type == "canvas":
         if axis == "x":
             if character.orientation == "left":
                 return self.x - (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
-                            3 * fps)
+                            3 * session.fps)
             elif character.orientation == "right":
                 return self.x + (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
-                            3 * fps)
+                            3 * session.fps)
             else:
                 return self.x
         elif axis == "y":
             if character.orientation == "up":
                 return self.y - (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
-                            3 * fps)
+                            3 * session.fps)
             elif character.orientation == "down":
                 return self.y + (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
-                            3 * fps)
+                            3 * session.fps)
             else:
                 return self.y
 
@@ -474,7 +469,7 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
         self.frames = {frame: {direction: load(self.name.lower().replace(" ", "/") + "/" + direction + str(frame) + ".png") for direction in ["left","up","right","down"]} for frame in range(frames)} #frames # The number of frames in the character's movement animation. The attribute "frames" becomes a dictionary of all the images during initialisation.
         self.position = position    # Character's grid position
         self.orientation = orientation  # The direction in which the character is facing
-        self.movespeed = movespeed  # Character's movement speed. Should divide 3*fps (currently 90). Definitely should NOT be 90 or even near it. Also the 3*fps value may need changing.
+        self.movespeed = movespeed  # Character's movement speed. Should divide 3*session.fps (currently 90). Definitely should NOT be 90 or even near it. Also the 3*session.fps value may need changing.
         self.movement_cooldown = 0
         self.current_ability = ""   # The ability the character is currently using
         self.ability_frame = 0  # The frame of the ability animation the character is currently playing
@@ -499,25 +494,25 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
                 and (self.position[0] > 0 or self.position[0]-1 in [exit.coordinates[0] for exit in room.exits if exit.coordinates[1] == self.position[1]])):
                 self.orientation = "left"
                 self.position = (self.position[0] - 1, self.position[1])
-                self.movement_cooldown = (3*fps)//self.movespeed
+                self.movement_cooldown = (3*session.fps)//self.movespeed
                 return True
             elif (direction == "right" and (not (self.position[0] + 1, self.position[1]) in room.blocked)
                   and (self.position[0] < room.max_coord[0] or self.position[0]+1 in [exit.coordinates[0] for exit in room.exits if exit.coordinates[1] == self.position[1]])):
                 self.orientation = "right"
                 self.position = (self.position[0] + 1, self.position[1])
-                self.movement_cooldown = (3*fps)//self.movespeed
+                self.movement_cooldown = (3*session.fps)//self.movespeed
                 return True
             elif (direction == "up" and (not (self.position[0], self.position[1] - 1) in room.blocked)
                   and (self.position[1] > 0 or self.position[1]-1 in [exit.coordinates[1] for exit in room.exits if exit.coordinates[0] == self.position[0]])):
                 self.orientation = "up"
                 self.position = (self.position[0], self.position[1] - 1)
-                self.movement_cooldown = (3*fps)//self.movespeed
+                self.movement_cooldown = (3*session.fps)//self.movespeed
                 return True
             elif (direction == "down" and (not (self.position[0], self.position[1] + 1) in room.blocked)
                   and (self.position[1] < room.max_coord[1] or self.position[1]+1 in [exit.coordinates[1] for exit in room.exits if exit.coordinates[0] == self.position[0]])):
                 self.orientation = "down"
                 self.position = (self.position[0], self.position[1] + 1)
-                self.movement_cooldown = (3*fps)//self.movespeed
+                self.movement_cooldown = (3*session.fps)//self.movespeed
                 return True
             else:
                 self.orientation = direction
@@ -553,12 +548,12 @@ class Character(object):    # maybe add an "id" attribute. One to identify each 
                 self.ability_frame = 0
             return selected_image
         else:
-            return self.frames[(self.movement_cooldown * (len(self.frames)-1) * self.movespeed + (3*fps) - 1 +
+            return self.frames[(self.movement_cooldown * (len(self.frames)-1) * self.movespeed + (3*session.fps) - 1 +
                                 int((session.keys.left_arrow.is_pressed or session.keys.right_arrow.is_pressed or
                                      session.keys.up_arrow.is_pressed or session.keys.down_arrow.is_pressed or
                                      session.keys.a.is_pressed or session.keys.d.is_pressed or
                                      session.keys.w.is_pressed or session.keys.s.is_pressed)
-                                and not(self.movement_cooldown == (3*fps)//self.movespeed)))//(3*fps)][self.orientation]
+                                and not(self.movement_cooldown == (3*session.fps)//self.movespeed)))//(3*session.fps)][self.orientation]
     
     # Changes the character's image to reflect the character's current disposition
     def change_image(self):
@@ -591,13 +586,13 @@ class Player(Character):
     def change_position(self, room):
         if self.movement_cooldown:  # decrementing self.movement cooldown if it is not equal to 0
             self.movement_cooldown -= 1
-        elif ((session.keys.left_arrow.time_held > 1/fps or session.keys.a.time_held > 1/fps) or ((session.keys.left_arrow.time_held or session.keys.a.time_held) and self.orientation == "left")) and (is_longest_held(session.keys.left_arrow.time_held) or is_longest_held(session.keys.a.time_held)):
+        elif ((session.keys.left_arrow.time_held > 1/session.fps or session.keys.a.time_held > 1/session.fps) or ((session.keys.left_arrow.time_held or session.keys.a.time_held) and self.orientation == "left")) and (is_longest_held(session.keys.left_arrow.time_held) or is_longest_held(session.keys.a.time_held)):
             self.move(room, "left")
-        elif ((session.keys.right_arrow.time_held > 1/fps or session.keys.d.time_held > 1/fps) or ((session.keys.right_arrow.time_held or session.keys.d.time_held) and self.orientation == "right")) and (is_longest_held(session.keys.right_arrow.time_held) or is_longest_held(session.keys.d.time_held)):
+        elif ((session.keys.right_arrow.time_held > 1/session.fps or session.keys.d.time_held > 1/session.fps) or ((session.keys.right_arrow.time_held or session.keys.d.time_held) and self.orientation == "right")) and (is_longest_held(session.keys.right_arrow.time_held) or is_longest_held(session.keys.d.time_held)):
             self.move(room, "right")
-        elif ((session.keys.up_arrow.time_held > 1/fps or session.keys.w.time_held > 1/fps) or ((session.keys.up_arrow.time_held or session.keys.w.time_held) and self.orientation == "up")) and (is_longest_held(session.keys.up_arrow.time_held) or is_longest_held(session.keys.w.time_held)):
+        elif ((session.keys.up_arrow.time_held > 1/session.fps or session.keys.w.time_held > 1/session.fps) or ((session.keys.up_arrow.time_held or session.keys.w.time_held) and self.orientation == "up")) and (is_longest_held(session.keys.up_arrow.time_held) or is_longest_held(session.keys.w.time_held)):
             self.move(room, "up")
-        elif ((session.keys.down_arrow.time_held > 1/fps or session.keys.s.time_held > 1/fps) or ((session.keys.down_arrow.time_held or session.keys.s.time_held) and self.orientation == "down")) and (is_longest_held(session.keys.down_arrow.time_held) or is_longest_held(session.keys.s.time_held)):
+        elif ((session.keys.down_arrow.time_held > 1/session.fps or session.keys.s.time_held > 1/session.fps) or ((session.keys.down_arrow.time_held or session.keys.s.time_held) and self.orientation == "down")) and (is_longest_held(session.keys.down_arrow.time_held) or is_longest_held(session.keys.s.time_held)):
             self.move(room, "down")
     
     def check_exit(self, room):
@@ -635,7 +630,7 @@ class Npc(Character):
             self.movement_cooldown -= 1
         elif len(self.moves) != 0:
             self.move(room, self.moves[0])
-            if self.movement_cooldown == (3*fps)//self.movespeed: # Deleting the current move after the movement command has been issued
+            if self.movement_cooldown == (3*session.fps)//self.movespeed: # Deleting the current move after the movement command has been issued
                 del self.moves[0]
     
     def check_collision(self, player):
@@ -643,7 +638,7 @@ class Npc(Character):
             damage_dealt = int(self.damage*(0.9 + 0.2*random.random()))
             player.current_life -= damage_dealt
             number_drop("damage", player, damage_dealt)
-            self.damage_cooldown = fps
+            self.damage_cooldown = session.fps
         elif self.damage_cooldown > 0:
             self.damage_cooldown -= 1
     
@@ -652,7 +647,7 @@ class Npc(Character):
     # Finding the route from the npc's current position to the desired position using the A* search algorithm
     def find_route(self, room, goal):
         # (maybe somehow make this only run when the player moves? recalculating every frame seems inefficient...)
-        if not self.alive or abs(self.position[0] - goal[0]) + abs(self.position[1] - goal[1]) > 15 or (frame % fps != 0 and abs(self.position[0] - goal[0]) + abs(self.position[1] - goal[1]) > 4):
+        if not self.alive or abs(self.position[0] - goal[0]) + abs(self.position[1] - goal[1]) > 15 or (frame % session.fps != 0 and abs(self.position[0] - goal[0]) + abs(self.position[1] - goal[1]) > 4):
             return
         elif (self.position == goal
               or goal[0] < 0 or goal[0] > room.max_coord[0] or goal[1] < 0 or goal[1] > room.max_coord[1]): # Ensuring that the algorithm isn't run to try to get to a place the npc cannot access.
@@ -749,7 +744,7 @@ class Ability(Character):
             if self.cooldown == 0 and self.unlocked:
                 self.room = player.room
                 player.current_ability = self.name.lower()            
-                self.cooldown = fps*self.max_cooldown
+                self.cooldown = session.fps*self.max_cooldown
         elif self.dead and zaal_animation == -1 and player.position in [(x,y) for y in range(4,15) for x in range(10,13)]+[(x,y) for y in range(2,4) for x in range(10)]+[(x,y) for y in range(2) for x in range(10,13)]+[(x,y) for y in range(2,4) for x in range(13,20)]:
             zaal_animation = 18
             session.audio.sound.play(AudioClip("zaalattack.ogg", 0.2))
@@ -775,7 +770,7 @@ class Ability(Character):
             self.dead = False        
             self.displayed = True 
             self.room = player.room
-            self.cooldown = fps*self.max_cooldown
+            self.cooldown = session.fps*self.max_cooldown
             zaal_animation = -1
             if player.position in [(x,y) for y in range(4,15) for x in range(10,13)]:
                 self.position = (player.position[0], 5)
@@ -813,7 +808,7 @@ class Ability(Character):
         elif len(self.moves) != 0:
             if not self.move(room, self.moves[0]):
                 self.alive = False
-            if self.movement_cooldown == (3*fps)//self.movespeed: # Deleting the current move after the movement command has been issued
+            if self.movement_cooldown == (3*session.fps)//self.movespeed: # Deleting the current move after the movement command has been issued
                 del self.moves[0]
         
     def check_display(self):
@@ -860,7 +855,7 @@ class Extra(object):
                 else:
                     self.images = [extra_images[image_name[0:len(image_name)-len(str(rotations-1))] + "".join(["0" for zero in range(len(str(rotations-1)) - len(str(n)))]) + str(n)] for n in range(rotations)] # Making a list of all the image files for extras that rotate through images
                 
-            self.rotation_interval = rotation_interval    # How often the images rotate (in seconds) (must be at least 1/fps)
+            self.rotation_interval = rotation_interval    # How often the images rotate (in seconds) (must be at least 1/session.fps)
             self.image_number = 0
             self.rotation_direction = "up"
             self.start_x = start_x  # The first grid x coordinate of the player's character where the image must be shown
@@ -876,7 +871,7 @@ class Extra(object):
 
             if self.scroll_speed != 0:   # Changing the position of images that should scroll
                 if self.scroll_axis == "x":
-                    self.x += float(self.scroll_speed)/fps
+                    self.x += float(self.scroll_speed)/session.fps
                     if abs(self.x - self.original_x) >= self.width:
                         self.x = self.original_x
                 elif self.scroll_axis == "y":
@@ -887,7 +882,7 @@ class Extra(object):
                     raise
 
             if self.rotations > 1:  # Changing the image at the correct time for images that rotate
-                if frame % int(self.rotation_interval*fps) == 0:
+                if frame % int(self.rotation_interval*session.fps) == 0:
                     if self.rotation_direction == "up":
                         self.image_number += 1
                         if self.image_number == self.rotations:
@@ -1451,21 +1446,12 @@ inferno.unlocked = True
 inferno.dead = True
 
 # Initialising screen/window related variables
-ongoing = True
-clock = pygame.time.Clock()
-start_time = time.time()
+session.is_running = True
 frame = 1   # Storing the current frame as a variable
 
 ## Program window while loop
-while ongoing:
-    for channel, sound in session.audio.sound._currently_playing.items():
-        print(channel)
-        print(channel.get_busy())
-        print(sound.sound)
-        s = channel.get_sound()
-        print(s)
-        print(s is sound.sound)
-    current_time = time.time() - start_time
+while session.is_running:
+    session.uptime = time.time() - session.start_time
 
     session.mouse.reset_buttons()
     session.mouse.update_coordinates()
@@ -1473,7 +1459,7 @@ while ongoing:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            ongoing = False
+            session.is_running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             session.mouse.process_button_down(event)
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -1517,7 +1503,7 @@ while ongoing:
             current = "in game"
         
         elif current[0:8] == "cutscene":
-            cutscene_time = current_time - cutscene_start_time
+            cutscene_time = session.uptime - cutscene_start_time
             if cutscene_time < 1:                
                 vincent[form].change_image()
             if current[8] == "0":
@@ -1534,7 +1520,7 @@ while ongoing:
                 elif cutscene_time < 10:
                     portal.display(current_room, vincent[form])
                     if not display_dialogue("vincent", 0):
-                        cutscene_start_time = current_time - 10
+                        cutscene_start_time = session.uptime - 10
                 elif cutscene_time < 12:
                     if len(session.audio.sound.currently_playing) < 2:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
@@ -1544,12 +1530,12 @@ while ongoing:
                 elif cutscene_time < 17:
                     current_room.display_room(vincent[form])
                     if not display_dialogue("vincent", 1):
-                        cutscene_start_time = current_time - 17
+                        cutscene_start_time = session.uptime - 17
                 elif cutscene_time < 10017:
                     current_room.display_room(vincent[form])
                     session.screen.blit(tutorial[0], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 10017
+                        cutscene_start_time = session.uptime - 10017
                 else:
                     cutscene0_played = True
                     cutscene_playing = False
@@ -1559,22 +1545,22 @@ while ongoing:
                 current_room.display_room(vincent[form])
                 if cutscene_time < 10:
                     if not display_dialogue("vincent", 1):
-                        cutscene_start_time = current_time - 10
+                        cutscene_start_time = session.uptime - 10
                 elif cutscene_time < 20:
                     if not display_dialogue("mysterious", 0):
-                        cutscene_start_time = current_time - 20
+                        cutscene_start_time = session.uptime - 20
                 elif cutscene_time < 30:
                     if not display_dialogue("mysterious", 1):
-                        cutscene_start_time = current_time - 30
+                        cutscene_start_time = session.uptime - 30
                 elif cutscene_time < 40:
                     if not display_dialogue("vincent", 2):
-                        cutscene_start_time = current_time - 40
+                        cutscene_start_time = session.uptime - 40
                 elif cutscene_time < 50:
                     if not display_dialogue("vincent", 3):
-                        cutscene_start_time = current_time - 50
+                        cutscene_start_time = session.uptime - 50
                 elif cutscene_time < 60:
                     if not display_dialogue("mysterious", 2):
-                        cutscene_start_time = current_time - 60
+                        cutscene_start_time = session.uptime - 60
                 elif cutscene_time < 62.4:
                     if not coordinates_set:                        
                         star.x += 70*(vincent[form].position[0] - 12)
@@ -1603,21 +1589,21 @@ while ongoing:
                     session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 76:
                     if not display_dialogue("mysterious", 0):
-                        cutscene_start_time = current_time - 76
+                        cutscene_start_time = session.uptime - 76
                 elif cutscene_time < 86:
                     if not display_dialogue("vincent", 4):
-                        cutscene_start_time = current_time - 86
+                        cutscene_start_time = session.uptime - 86
                 elif cutscene_time < 96:
                     if not display_dialogue("mysterious", 3):
-                        cutscene_start_time = current_time - 96
+                        cutscene_start_time = session.uptime - 96
                 elif cutscene_time < 106:
                     if not display_dialogue("vincent", 5):
-                        cutscene_start_time = current_time - 106
+                        cutscene_start_time = session.uptime - 106
                 elif cutscene_time < 116:
                     if not display_dialogue("mysterious", 0):
-                        cutscene_start_time = current_time - 116
+                        cutscene_start_time = session.uptime - 116
                 else:
-                    session.audio._music.play(AudioClip("main.ogg", 0.5))
+                    session.audio.music.play(AudioClip("main.ogg", 0.5))
                     coordinates_set = False
                     cutscene1_played = True
                     cutscene_playing = False
@@ -1635,7 +1621,7 @@ while ongoing:
                 elif cutscene_time < 10002:
                     session.screen.blit(tutorial[1], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 10002
+                        cutscene_start_time = session.uptime - 10002
                 else:
                     cutscene2_played = True
                     cutscene_playing = False
@@ -1647,39 +1633,39 @@ while ongoing:
                     display_spellbook()
                     session.screen.blit(tutorial[2], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 10000
+                        cutscene_start_time = session.uptime - 10000
                 elif cutscene_time < 20000:
                     display_hud()
                     session.screen.blit(hud_images["firebolt"], (760, 1029))
                     display_spellbook()
                     if session.keys.escape or session.keys.backspace:
-                        cutscene_start_time = current_time - 20000
+                        cutscene_start_time = session.uptime - 20000
                 elif cutscene_time < 30000:
                     session.screen.blit(tutorial[3], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 30000
+                        cutscene_start_time = session.uptime - 30000
                 elif cutscene_time < 40000:
                     session.screen.blit(tutorial[4], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 40000
+                        cutscene_start_time = session.uptime - 40000
                 elif cutscene_time < 50000:
                     session.screen.blit(tutorial[5], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 50000
+                        cutscene_start_time = session.uptime - 50000
                 elif cutscene_time < 60000:
                     session.screen.blit(tutorial[6], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 60000
+                        cutscene_start_time = session.uptime - 60000
                 elif cutscene_time < 70000:
                     session.screen.blit(tutorial[7], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 70000
+                        cutscene_start_time = session.uptime - 70000
                 elif cutscene_time < 80000:
                     display_hud()                    
                     session.screen.blit(hud_images["firebolt"], (760, 1029))
                     session.screen.blit(tutorial[8], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 80000
+                        cutscene_start_time = session.uptime - 80000
                 else:
                     display_hud()
                     session.screen.blit(hud_images["firebolt"], (760, 1029))
@@ -1694,11 +1680,11 @@ while ongoing:
                 current_room.display_room(vincent[form])
                 if cutscene_time < 25:
                     if not display_dialogue("vincent", 6):
-                        cutscene_start_time = current_time - 25
+                        cutscene_start_time = session.uptime - 25
                 elif cutscene_time < 10025:
                     session.screen.blit(tutorial[9], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 10025
+                        cutscene_start_time = session.uptime - 10025
                 else:
                     vincent[form].exp += 35
                     number_drop("exp", vincent[form], 35)
@@ -1714,7 +1700,7 @@ while ongoing:
                 if cutscene_time < 10000:
                     session.screen.blit(tutorial[10], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-                        cutscene_start_time = current_time - 10000
+                        cutscene_start_time = session.uptime - 10000
                 else:
                     cutscene5_played = True
                     cutscene_playing = False
@@ -1756,30 +1742,30 @@ while ongoing:
                     session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10:                    
                     if not display_dialogue("vincent", 1):
-                        cutscene_start_time = current_time - 10
+                        cutscene_start_time = session.uptime - 10
                 elif cutscene_time < 25:
                     if not display_dialogue("zaal", 0):
-                        cutscene_start_time = current_time - 25
+                        cutscene_start_time = session.uptime - 25
                 elif cutscene_time < 40:
                     if not display_dialogue("vincent", 7):
-                        cutscene_start_time = current_time - 40
+                        cutscene_start_time = session.uptime - 40
                 elif cutscene_time < 50:
                     if not display_dialogue("zaal", 1):
-                        cutscene_start_time = current_time - 50
+                        cutscene_start_time = session.uptime - 50
                 elif cutscene_time < 65:
                     if not display_dialogue("zaal", 2):
-                        cutscene_start_time = current_time - 65
+                        cutscene_start_time = session.uptime - 65
                 elif cutscene_time < 75:
                     if not display_dialogue("vincent", 8):
-                        cutscene_start_time = current_time - 75
+                        cutscene_start_time = session.uptime - 75
                 elif cutscene_time < 100:
                     if not display_dialogue("zaal", 3):
-                        cutscene_start_time = current_time - 100
+                        cutscene_start_time = session.uptime - 100
                 elif cutscene_time < 125:
                     if not display_dialogue("zaal", 4):
-                        cutscene_start_time = current_time - 125
+                        cutscene_start_time = session.uptime - 125
                 else:
-                    session.audio._music.play(AudioClip("boss.ogg", 0.5))
+                    session.audio.music.play(AudioClip("boss.ogg", 0.5))
                     firebolt.room = 3
                     cutscene8_played = True
                     cutscene_playing = False
@@ -1796,10 +1782,10 @@ while ongoing:
                     current = "credits"
             
         elif current == "credits":
-            cutscene_time = current_time - cutscene_start_time
-            if cutscene_time < 12.0/fps:
+            cutscene_time = session.uptime - cutscene_start_time
+            if cutscene_time < 12.0/session.fps:
                 current_room.display_room(vincent[form])
-                session.screen.blit(zaal_images["death"][int(cutscene_time*fps)], (current_room.x + 840, current_room.y + 71))
+                session.screen.blit(zaal_images["death"][int(cutscene_time*session.fps)], (current_room.x + 840, current_room.y + 71))
             elif cutscene_time < 5:
                 current_room.display_room(vincent[form])
                 fade_screen.fill((0,0,0,51*cutscene_time))
@@ -1871,7 +1857,7 @@ while ongoing:
                         current = "main menu"   #(maybe), prolly go to credits isnt it
         
         elif current == "dead":
-            cutscene_time = current_time - cutscene_start_time
+            cutscene_time = session.uptime - cutscene_start_time
             if cutscene_time < 5:
                 current_room.display_room(vincent[form])
                 fade_screen.fill((0,0,0,51*cutscene_time))
@@ -1882,19 +1868,19 @@ while ongoing:
         elif current == "in game":
             if not cutscene0_played:
                 cutscene_playing = True
-                cutscene_start_time = current_time
+                cutscene_start_time = session.uptime
                 current = "cutscene0"
             elif not cutscene1_played and vincent[form].room == 1 and vincent[form].position[1] < 7 and vincent[form].movement_cooldown == 0:
                 cutscene_playing = True
-                cutscene_start_time = current_time
+                cutscene_start_time = session.uptime
                 current = "cutscene1"
             elif not cutscene2_played and vincent[form].room == 2 and vincent[form].position[1] < 26 and vincent[form].movement_cooldown == 0:
                 cutscene_playing = True
-                cutscene_start_time = current_time
+                cutscene_start_time = session.uptime
                 current = "cutscene2"
             elif not cutscene8_played and vincent[form].room == 3:
                 cutscene_playing = True
-                cutscene_start_time = current_time
+                cutscene_start_time = session.uptime
                 current = "cutscene8"
             else:
                 vincent[form].check_death()
@@ -1948,7 +1934,7 @@ while ongoing:
 
                     if zaal_life <= 0:
                         cutscene_playing = True
-                        cutscene_start_time = current_time
+                        cutscene_start_time = session.uptime
                         pygame.mixer.mixer.stop()
                         current_room.extras.append(portal)
                         portal.x = 900
@@ -1974,9 +1960,7 @@ while ongoing:
 
                 if show_spellbook:
                     display_spellbook()
-                    print(1)
                     if session.mouse.is_in(748, 499, 825, 576):
-                        print(2)
                         session.screen.blit(tutorial[12], (0,0))
                         if session.mouse.left and cutscene5_played and not cutscene6_played and vincent[form].skill_points > 0:
                             vincent[form].skill_points -= 1
@@ -2006,7 +1990,7 @@ while ongoing:
 
                 if not cutscene5_played and vincent[form].level == 2 and not levelling_up:
                     cutscene_playing = True
-                    cutscene_start_time = current_time
+                    cutscene_start_time = session.uptime
                     current = "cutscene5"
 
                 if mean_slime.dead and not drop in rooms[2].extras and not "slime_chunk" in inventory and not slime_portal in rooms[2].extras:
@@ -2028,12 +2012,12 @@ while ongoing:
                             current_room.extras.remove(book_item)
                             current_room.extras.remove(book_light)
                             cutscene_playing = True
-                            cutscene_start_time = current_time
+                            cutscene_start_time = session.uptime
                             current = "cutscene3"
                     elif not cutscene4_played:
                         if is_interactable((104,25)):
                             cutscene_playing = True
-                            cutscene_start_time = current_time
+                            cutscene_start_time = session.uptime
                             current = "cutscene4"
                     elif drop in current_room.extras:
                         if is_interactable(mean_slime.position):
@@ -2047,7 +2031,7 @@ while ongoing:
                 if slime_portal in rooms[2].extras and firebolt.position == (portal_x,portal_y) and firebolt.alive and not cutscene7_played:
                     firebolt.alive = False
                     cutscene_playing = True
-                    cutscene_start_time = current_time
+                    cutscene_start_time = session.uptime
                     current = "cutscene7"
 
                 if session.keys.one or session.keys.numpad_one:
@@ -2076,7 +2060,7 @@ while ongoing:
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
             
         elif current == "exit":
-            ongoing = False
+            session.is_running = False
     
     # Displaying an error message if requested
     try:
@@ -2088,7 +2072,7 @@ while ongoing:
 
     frame += 1  # Incrementing the current frame
     pygame.display.flip()   # Updating the screen at the end of blitting
-    clock.tick(fps)          # Setting fps limit
+    session.clock.tick(session.fps)          # Setting session.fps limit
 
 # Closing and saving the program
 try:

@@ -1,5 +1,4 @@
 """Module containing classes for processing and playing of pygame audio clips."""
-
 from multiprocessing.dummy import Pool
 
 import pygame
@@ -24,7 +23,7 @@ class AudioClip:
     def __init__(self, file_name, volume_multiplier=1.0, *, load_async=True):
         """Create an AudioClip instance.
 
-        file_name: the relative path to the audio file from with audio/ directory.
+        file_name: the relative path to the audio file from AudioClip._BASE_PATH.
         volume_multiplier: adjust the base volume of this clip if it is naturally too loud.
         load_async: whether to load the clip asynchronously.
         """
