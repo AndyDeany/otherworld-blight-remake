@@ -16,11 +16,12 @@ os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
 screen = pygame.display.set_mode((1920, 1080), pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.NOFRAME)
 
 
+from lib.base import Base
 from lib.session import Session
 from lib.audio import AudioClip
 
 from lib.loot import Loot
-from lib.base import Base
+from lib.coordinates import Coordinates
 
 
 # Defining the error logging function
@@ -157,10 +158,10 @@ def add_movement(self, character, axis, file_type):
 # Defining a function to check if Vincent is in a valid place to interact with the given coordinates
 def is_interactable(coordinates):
     return (vincent.position == coordinates
-            or (vincent.position == (coordinates[0] - 1, coordinates[1]) and vincent.orientation == "right")
-            or (vincent.position == (coordinates[0], coordinates[1] - 1) and vincent.orientation == "down")
-            or (vincent.position == (coordinates[0] + 1, coordinates[1]) and vincent.orientation == "left")
-            or (vincent.position == (coordinates[0], coordinates[1] + 1) and vincent.orientation == "up"))
+            or (vincent.position == coordinates.left and vincent.orientation == "right")
+            or (vincent.position == coordinates.up and vincent.orientation == "down")
+            or (vincent.position == coordinates.right and vincent.orientation == "left")
+            or (vincent.position == coordinates.down and vincent.orientation == "up"))
 
 
 # Defining functinos to show exp drops, damage values and healing values
@@ -256,7 +257,7 @@ def load_game(savefile):
     cutscene6_played = bool(save.readline()[:-1])
     cutscene7_played = bool(save.readline()[:-1])
     cutscene8_played = bool(save.readline()[:-1])
-    vincent.position = (int(save.readline()[:-1]), int(save.readline()[:-1]))
+    vincent.position = Coordinates(int(save.readline()[:-1]), int(save.readline()[:-1]))
     vincent.orientation = save.readline()[:-1]
     vincent.room = int(save.readline()[:-1])
     vincent.exp = int(save.readline()[:-1])
@@ -284,8 +285,8 @@ def save_game(savefile):
     save.write(str(cutscene6_played) + "\n")
     save.write(str(cutscene7_played) + "\n")
     save.write(str(cutscene8_played) + "\n")
-    save.write(str(vincent.position[0]) + "\n")
-    save.write(str(vincent.position[1]) + "\n")
+    save.write(str(vincent.position.x) + "\n")
+    save.write(str(vincent.position.y) + "\n")
     save.write(str(vincent.orientation) + "\n")
     save.write(str(vincent.room) + "\n")
     save.write(str(vincent.exp) + "\n")
@@ -449,28 +450,32 @@ class Character(Base):    # maybe add an "id" attribute. One to identify each ob
     def move(self, room, direction):
         """returns True if desired position is valid"""
         if not self.movement_cooldown and not cutscene_playing and self.alive:
-            if (direction == "left" and (not (self.position[0] - 1, self.position[1]) in room.blocked)
-                and (self.position[0] > 0 or self.position[0]-1 in [exit.coordinates[0] for exit in room.exits if exit.coordinates[1] == self.position[1]])):
+            if (direction == "left"
+                and (not (self.position.x - 1, self.position.y) in room.blocked)
+                and (self.position.x > 0 or self.position.x-1 in
+                     (exit_.coordinates.x for exit_ in room.exits
+                      if exit_.coordinates.y == self.position.y))):
                 self.orientation = "left"
-                self.position = (self.position[0] - 1, self.position[1])
+                self.position = self.position.left
                 self.movement_cooldown = (3*session.fps)//self.movespeed
                 return True
-            elif (direction == "right" and (not (self.position[0] + 1, self.position[1]) in room.blocked)
-                  and (self.position[0] < room.max_coord[0] or self.position[0]+1 in [exit.coordinates[0] for exit in room.exits if exit.coordinates[1] == self.position[1]])):
+            elif (direction == "right"
+                  and (not (self.position.x + 1, self.position.y) in room.blocked)
+                  and (self.position.x < room.max_coord.x or self.position.x+1 in [exit.coordinates.x for exit in room.exits if exit.coordinates.y == self.position.y])):
                 self.orientation = "right"
-                self.position = (self.position[0] + 1, self.position[1])
+                self.position = self.position.right
                 self.movement_cooldown = (3*session.fps)//self.movespeed
                 return True
-            elif (direction == "up" and (not (self.position[0], self.position[1] - 1) in room.blocked)
-                  and (self.position[1] > 0 or self.position[1]-1 in [exit.coordinates[1] for exit in room.exits if exit.coordinates[0] == self.position[0]])):
+            elif (direction == "up" and (not (self.position.x, self.position.y - 1) in room.blocked)
+                  and (self.position.y > 0 or self.position.y-1 in [exit.coordinates.y for exit in room.exits if exit.coordinates.x == self.position.x])):
                 self.orientation = "up"
-                self.position = (self.position[0], self.position[1] - 1)
+                self.position = self.position.up
                 self.movement_cooldown = (3*session.fps)//self.movespeed
                 return True
-            elif (direction == "down" and (not (self.position[0], self.position[1] + 1) in room.blocked)
-                  and (self.position[1] < room.max_coord[1] or self.position[1]+1 in [exit.coordinates[1] for exit in room.exits if exit.coordinates[0] == self.position[0]])):
+            elif (direction == "down" and (not (self.position.x, self.position.y + 1) in room.blocked)
+                  and (self.position.y < room.max_coord.y or self.position.y+1 in [exit.coordinates.y for exit in room.exits if exit.coordinates.x == self.position.x])):
                 self.orientation = "down"
-                self.position = (self.position[0], self.position[1] + 1)
+                self.position = self.position.down
                 self.movement_cooldown = (3*session.fps)//self.movespeed
                 return True
             else:
@@ -633,18 +638,18 @@ class Npc(Character):
     # Finding the route from the npc's current position to the desired position using the A* search algorithm
     def find_route(self, room, goal):
         # (maybe somehow make this only run when the player moves? recalculating every frame seems inefficient...)
-        if not self.alive or abs(self.position[0] - goal[0]) + abs(self.position[1] - goal[1]) > 15 or (frame % session.fps != 0 and abs(self.position[0] - goal[0]) + abs(self.position[1] - goal[1]) > 4):
+        if not self.alive or abs(self.position.x - goal[0]) + abs(self.position.y - goal[1]) > 15 or (frame % session.fps != 0 and abs(self.position.x - goal[0]) + abs(self.position.y - goal[1]) > 4):
             return
         elif (self.position == goal
-              or goal[0] < 0 or goal[0] > room.max_coord[0] or goal[1] < 0 or goal[1] > room.max_coord[1]): # Ensuring that the algorithm isn't run to try to get to a place the npc cannot access.
+              or goal[0] < 0 or goal[0] > room.max_coord.x or goal[1] < 0 or goal[1] > room.max_coord.y): # Ensuring that the algorithm isn't run to try to get to a place the npc cannot access.
             self.moves = []
         else:
             class Square(object):
-                def __init__(self, coordinates, parent=""):  # If no parent value (starting square)
+                def __init__(self, coordinates, parent=None):  # If no parent value (starting square)
                     self.coordinates = coordinates  # Coordinates of the square
                     self.parent = parent            # Parent square; the square which the cell is adjacent to that it came from
-                    self.min_distance = abs(coordinates[0] - goal[0]) + abs(coordinates[1] - goal[1])   # Direct route to goal from square, as if there were no walls
-                    if self.parent == "":   # Setting the square's current distance to 0 if it is the starting square
+                    self.min_distance = abs(coordinates.x - goal[0]) + abs(coordinates.y - goal[1])   # Direct route to goal from square, as if there were no walls
+                    if self.parent is None:   # Setting the square's current distance to 0 if it is the starting square
                         self.current_distance = 0
                     else:
                         self.current_distance = self.parent.current_distance + 1    # Distance from starting square to current square
@@ -655,21 +660,21 @@ class Npc(Character):
             pending = [Square(self.position)]    # A list of squares that have not been fully explored from. The starting square has no parent because it has not travelled from anywhere to get there
 
             while (len(pending) != 0
-                   and len(pending) < (room.max_coord[0] + 1)*(room.max_coord[1] + 1)): # Making sure the algorithm doesn't carry on forever if it cannot find a route
+                   and len(pending) < (room.max_coord.x + 1)*(room.max_coord.y + 1)): # Making sure the algorithm doesn't carry on forever if it cannot find a route
                 square = min(pending, key=attrgetter("total_distance"))
 
                 processed.append(square)
                 pending.remove(square)
 
                 adjacents = []   # A list of squares adjacent to the current square
-                if not square.coordinates[0] == 0:
-                    adjacents.append(Square((square.coordinates[0]-1,square.coordinates[1]), square))
-                if not square.coordinates[1] == 0:
-                    adjacents.append(Square((square.coordinates[0],square.coordinates[1]-1), square))
-                if not square.coordinates[0] == room.max_coord[0]:
-                    adjacents.append(Square((square.coordinates[0]+1,square.coordinates[1]), square))
-                if not square.coordinates[1] == room.max_coord[1]:
-                    adjacents.append(Square((square.coordinates[0],square.coordinates[1]+1), square))
+                if not square.coordinates.x == 0:
+                    adjacents.append(Square(square.coordinates.left, square))
+                if not square.coordinates.y == 0:
+                    adjacents.append(Square(square.coordinates.up, square))
+                if not square.coordinates.x == room.max_coord.x:
+                    adjacents.append(Square(square.coordinates.right, square))
+                if not square.coordinates.y == room.max_coord.y:
+                    adjacents.append(Square(square.coordinates.down, square))
 
                 for adjacent in adjacents:
                     if adjacent.coordinates == goal:
@@ -687,8 +692,8 @@ class Npc(Character):
             else:   # If the algorithm is unable to find a route to the goal, it will create a route to the closest square to the goal
                 closest_square = processed[0]   # Default VALID value
                 for square in processed:
-                    if (abs(square.coordinates[0] - goal.coordinates[0]) + abs(square.coordinates[1] - goal.coordinates[1]) <
-                        abs(closest_square.coordinates[0] - goal.coordinates[0]) + abs(closest_square.coordinates[1] - goal.coordinates[1])):
+                    if (abs(square.coordinates.x - goal.coordinates.x) + abs(square.coordinates.y - goal.coordinates.y) <
+                        abs(closest_square.coordinates.x - goal.coordinates.x) + abs(closest_square.coordinates.y - goal.coordinates.y)):
                         closest_square = square
                 goal = closest_square
 
@@ -697,13 +702,13 @@ class Npc(Character):
             while True:
                 if goal.coordinates == self.position:
                     break
-                elif goal.coordinates[0] == goal.parent.coordinates[0] - 1:
+                elif goal.coordinates.x == goal.parent.coordinates.x - 1:
                     route.append("left")
-                elif goal.coordinates[0] == goal.parent.coordinates[0] + 1:
+                elif goal.coordinates.x == goal.parent.coordinates.x + 1:
                     route.append("right")
-                elif goal.coordinates[1] == goal.parent.coordinates[1] - 1:
+                elif goal.coordinates.y == goal.parent.coordinates.y - 1:
                     route.append("up")
-                elif goal.coordinates[1] == goal.parent.coordinates[1] + 1:
+                elif goal.coordinates.y == goal.parent.coordinates.y + 1:
                     route.append("down")
                 goal = goal.parent
 
@@ -743,13 +748,13 @@ class Ability(Character):
             self.dead = False        
             self.displayed = True   
             if player.orientation == "left":
-                self.position = (player.position[0] - 1, player.position[1])
+                self.position = player.position.left
             elif player.orientation == "up":
-                self.position = (player.position[0], player.position[1] - 1)
+                self.position = player.position.up
             elif player.orientation == "right":
-                self.position = (player.position[0] + 1, player.position[1])
+                self.position = player.position.right
             elif player.orientation == "down":
-                self.position = (player.position[0], player.position[1] + 1)
+                self.position = player.position.down
             self.moves = [player.orientation for distance in range(self.max_range)]
         elif zaal_animation == 0:
             self.alive = True
@@ -759,19 +764,19 @@ class Ability(Character):
             self.cooldown = session.fps*self.max_cooldown
             zaal_animation = -1
             if player.position in [(x,y) for y in range(4,15) for x in range(10,13)]:
-                self.position = (player.position[0], 5)
+                self.position = Coordinates(player.position.x, 5)
                 self.moves = ["down" for distance in range(self.max_range)]
             elif player.position in [(x,y) for y in range(2,4) for x in range(10)]:
-                self.position = (9, player.position[1])
+                self.position = Coordinates(9, player.position.y)
                 self.moves = ["left" for distance in range(self.max_range)]
             elif player.position in [(x,y) for y in range(2) for x in range(10,13)]:
-                self.position = (player.position[0], 1)
+                self.position = Coordinates(player.position.x, 1)
                 self.moves = ["up" for distance in range(self.max_range)]
             elif player.position in [(x,y) for y in range(2,4) for x in range(13,20)]:
-                self.position = (13, player.position[1])                    
+                self.position = Coordinates(13, player.position.y)
                 self.moves = ["right" for distance in range(self.max_range)]
             else:
-                self.position = (-10,-10)
+                self.position = Coordinates(-10, -10)
                 self.alive = False
                 self.dead = True
                 self.display = False
@@ -851,8 +856,8 @@ class Extra(object):
                         
         def display(self, room, player):
             # Checking if the player is within the coordinates at which the extra should be displayed
-            in_x = (self.start_x is None and self.end_x is None) or self.start_x <= player.position[0] <= self.end_x
-            in_y = (self.start_y is None and self.end_y is None) or self.start_y <= player.position[1] <= self.end_y
+            in_x = (self.start_x is None and self.end_x is None) or self.start_x <= player.position.x <= self.end_x
+            in_y = (self.start_y is None and self.end_y is None) or self.start_y <= player.position.y <= self.end_y
             show_extra = in_x and in_y
 
             if self.scroll_speed != 0:   # Changing the position of images that should scroll
@@ -925,31 +930,28 @@ class Room(object):
         self.grey_up = grey_up
         self.grey_right = grey_right
         self.grey_down = grey_down
-        self.max_coord = (((self.width - (grey_left + grey_right))//self.square_size[0]) - 1, ((self.height - (grey_up + grey_down))//self.square_size[1]) - 1)
+        self.max_coord = Coordinates(((self.width - (grey_left + grey_right))//self.square_size[0]) - 1, ((self.height - (grey_up + grey_down))//self.square_size[1]) - 1)
         self.blocked = blocked  # A list of squares which are blocked by terrain, such that the player cannot walk on them. Don't add squares higher than the max coordinate >_> (waste of space)
         self.exits = exits # A list of tuples, showing squares which cause the player to exit the current room, and which area's they lead to.
 
-    # Adding a square to the blocked list  
     def add_blocked(self, square):
         """Add a grid coordinate to the list of blocked squares for this room"""
         if square in self.blocked:
             raise ValueError(f"Square '{square}' is already blocked.")
-        if not (0 <= square[0] <= self.max_coord[0] and 0 <= square[1] <= self.max_coord[1]):
+        if not (0 <= square.x <= self.max_coord.x and 0 <= square.y <= self.max_coord.y):
             raise ValueError(f"Square '{square}' not in coordinate range of current room ({self.name})")
         self.blocked.append(square)
-    
-    # Removing a square from the blocked list
+
     def remove_blocked(self, square):
         """Remove a grid coordinate from the list of blocked squares for this room"""
         if square not in self.blocked:
             raise ValueError(f"Square '{square}' is not currently blocked.")
-        if not (0 <= square[0] <= self.max_coord[0] and 0 <= square[1] <= self.max_coord[1]):
+        if not (0 <= square.x <= self.max_coord.x and 0 <= square.y <= self.max_coord.y):
             raise ValueError(f"Square '{square}' not in coordinate range of current room ({self.name})")
         self.blocked.remove(square)
-            
-    # Displaying everything in the room
+
     def display_room(self, player):
-        """Displays everything that will be on screen for the room"""
+        """Display everything that will be on screen for the room"""
         self.calculate_player_position(player)  # Calculating the player's and canvas's x and y coordinates on the screen
         session.screen.blit(self.canvas, (self.x,self.y))   # Blitting the canvas first, so everything else goes on top of it
 
@@ -973,28 +975,28 @@ class Room(object):
     def calculate_player_position(self, player):
         # Player's and canvas's x coordinates
         player.x = (screen_width - player.width)//2
-        if self.grey_left + (self.square_size[0]*player.position[0]) + ((self.square_size[0] - player.width)//2) < player.x:
-            player.x = self.grey_left + (self.square_size[0]*player.position[0]) + ((self.square_size[0] - player.width)//2)
+        if self.grey_left + (self.square_size[0]*player.position.x) + ((self.square_size[0] - player.width)//2) < player.x:
+            player.x = self.grey_left + (self.square_size[0]*player.position.x) + ((self.square_size[0] - player.width)//2)
             player.x = add_movement(self, player, "x", "image")
             self.x = 0
             # If the player is transistioning between a place where the player model would move and a place where the canvas would move
             if (player.x > (screen_width - player.width)//2
-                and (not self.grey_left + (self.square_size[0]*player.position[0]) + ((self.square_size[0] - player.width)//2) < player.x
+                and (not self.grey_left + (self.square_size[0]*player.position.x) + ((self.square_size[0] - player.width)//2) < player.x
                      or self.width > screen_width + self.square_size[0])):
                 self.x -= player.x - (screen_width - player.width)//2
                 player.x = (screen_width - player.width)//2
-        elif screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord[0] - player.position[0])) + ((self.square_size[0] - player.width)//2) > player.x:
-            player.x = screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord[0] - player.position[0])) + ((self.square_size[0] - player.width)//2)
+        elif screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord.x - player.position.x)) + ((self.square_size[0] - player.width)//2) > player.x:
+            player.x = screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord.x - player.position.x)) + ((self.square_size[0] - player.width)//2)
             player.x = add_movement(self, player, "x", "image")
             self.x = -(self.width - screen_width)
             # If the player is transistioning between a place where the player model would move and a place where the canvas would move
             if (player.x < (screen_width - player.width)//2
-                and (not screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord[0] - player.position[0])) + ((self.square_size[0] - player.width)//2) > player.x
+                and (not screen_width - self.grey_right - (self.square_size[0]*(1 + self.max_coord.x - player.position.x)) + ((self.square_size[0] - player.width)//2) > player.x
                      or self.width > screen_width + self.square_size[0])):
                 self.x += (screen_width - player.width)//2 - player.x
                 player.x = (screen_width - player.width)//2
         else:
-            self.x = -(self.grey_left + (self.square_size[0]*player.position[0]) - ((screen_width - player.width)//2) + (self.square_size[0] - player.width)//2)
+            self.x = -(self.grey_left + (self.square_size[0]*player.position.x) - ((screen_width - player.width)//2) + (self.square_size[0] - player.width)//2)
             self.x = add_movement(self, player, "x", "canvas")
             if self.x > 0:
                 player.x -= self.x
@@ -1005,28 +1007,28 @@ class Room(object):
 
         # Player's and canvas's y coordinates
         player.y = (screen_height - player.height)//2
-        if self.grey_up + self.square_size[1]*(player.position[1] - 1) + (2*self.square_size[1] - player.height) < player.y:
-            player.y = self.grey_up + self.square_size[1]*(player.position[1] - 1) + (2*self.square_size[1] - player.height)
+        if self.grey_up + self.square_size[1]*(player.position.y - 1) + (2*self.square_size[1] - player.height) < player.y:
+            player.y = self.grey_up + self.square_size[1]*(player.position.y - 1) + (2*self.square_size[1] - player.height)
             player.y = add_movement(self, player, "y", "image")
             self.y = 0
             # If the player is transistioning between a place where the player model would move and a place where the canvas would move
             if (player.y > (screen_height - player.height)//2
-                and (not self.grey_up + self.square_size[1]*(player.position[1] - 1) + (2*self.square_size[1] - player.height) < player.y
+                and (not self.grey_up + self.square_size[1]*(player.position.y - 1) + (2*self.square_size[1] - player.height) < player.y
                      or self.height > screen_height + self.square_size[1])):
                 self.y -= player.y - (screen_height - player.height)//2
                 player.y = (screen_height - player.height)//2
-        elif screen_height - self.grey_down - (self.square_size[1]*(self.max_coord[1] - player.position[1] + 2)) + (2*self.square_size[1] - player.height) > player.y:
-            player.y = screen_height - self.grey_down - (self.square_size[1]*(self.max_coord[1] - player.position[1] + 2)) + (2*self.square_size[1] - player.height)
+        elif screen_height - self.grey_down - (self.square_size[1]*(self.max_coord.y - player.position.y + 2)) + (2*self.square_size[1] - player.height) > player.y:
+            player.y = screen_height - self.grey_down - (self.square_size[1]*(self.max_coord.y - player.position.y + 2)) + (2*self.square_size[1] - player.height)
             player.y = add_movement(self, player, "y", "image")
             self.y = -(self.height - screen_height)
             # If the player is transistioning between a place where the player model would move and a place where the canvas would move
             if (player.y < (screen_height - player.height)//2
-                and (not screen_height - self.grey_down - (self.square_size[1]*(self.max_coord[1] - player.position[1] + 2)) + (2*self.square_size[1] - player.height) > player.y
+                and (not screen_height - self.grey_down - (self.square_size[1]*(self.max_coord.y - player.position.y + 2)) + (2*self.square_size[1] - player.height) > player.y
                      or self.height > screen_height + self.square_size[1])):
                 self.y += (screen_height - player.height)//2 - player.y
                 player.y = (screen_height - player.height)//2
         else:
-            self.y = -(self.grey_up + (self.square_size[1]*(player.position[1] - 1)) - ((screen_height - player.height)//2) + (2*self.square_size[1] - player.height))
+            self.y = -(self.grey_up + (self.square_size[1]*(player.position.y - 1)) - ((screen_height - player.height)//2) + (2*self.square_size[1] - player.height))
             self.y = add_movement(self, player, "y", "canvas")
             if self.y > 0:
                 player.y -= self.y
@@ -1037,8 +1039,8 @@ class Room(object):
 
     # Displaying NPCs on the canvas (and screen if their coordinates are on the screen)
     def display_npc(self, npc):
-        npc.x = self.grey_left + self.square_size[0]*npc.position[0] + (self.square_size[0] - npc.width)//2 + self.x
-        npc.y = self.grey_up + self.square_size[1]*(npc.position[1] - 1) + (2*self.square_size[1] - npc.height) + self.y
+        npc.x = self.grey_left + self.square_size[0]*npc.position.x + (self.square_size[0] - npc.width)//2 + self.x
+        npc.y = self.grey_up + self.square_size[1]*(npc.position.y - 1) + (2*self.square_size[1] - npc.height) + self.y
         npc.x = add_movement(self, npc, "x", "image")
         npc.y = add_movement(self, npc, "y", "image")
         session.screen.blit(npc.image, (npc.x,npc.y))
@@ -1293,9 +1295,9 @@ rooms = [
           portal,
           Extra("room0/front", "above", 0, 62)],
          (70,70), 420, 420, 450, 330, [(7,5)],
-         [Exit((6,-1), "up", 1, (11,14)),
-          Exit((7,-1), "up", 1, (12,14)),
-          Exit((8,-1), "up", 1, (13,14))]),
+         [Exit(Coordinates(6, -1), "up", 1, Coordinates(11, 14)),
+          Exit(Coordinates(7, -1), "up", 1, Coordinates(12, 14)),
+          Exit(Coordinates(8, -1), "up", 1, Coordinates(13, 14))]),
     Room("Room 1", load("room1/back.png"),
          [Extra("room1/barrier", "below", 55, 1054),
           Extra("room1/bottom", "above", 0, 1051, start_y=0, end_y=11),
@@ -1304,12 +1306,12 @@ rooms = [
           Extra("room1/bottom80", "above", 0, 1051, start_x=14, end_x=24, start_y=12, end_y=14),
           Extra("room1/sides", "above", 0, 0)],
          (70,70), 70, 280, 100, 50, [],
-         [Exit((11,15), "down", 0, (6,0)),
-           Exit((12,15), "down", 0, (7,0)),
-           Exit((13,15), "down", 0, (8,0)),
-           Exit((11,-1), "up", 2, (45,32)),
-           Exit((12,-1), "up", 2, (46,32)),
-           Exit((13,-1), "up", 2, (47,32))]),
+         [Exit(Coordinates(11, 15), "down", 0, Coordinates(6, 0)),
+          Exit(Coordinates(12, 15), "down", 0, Coordinates(7, 0)),
+          Exit(Coordinates(13, 15), "down", 0, Coordinates(8, 0)),
+          Exit(Coordinates(11, -1), "up", 2, Coordinates(45, 32)),
+          Exit(Coordinates(12, -1), "up", 2, Coordinates(46, 32)),
+          Exit(Coordinates(13, -1), "up", 2, Coordinates(47, 32))]),
     Room("Room 2", load("room2/lava_back.png"),
          [Extra("TESSELATEsharedroom/lava_back_glow0", "below", 0, 276, 0, 0, 5, 0.2),
           Extra("TESSELATEsharedroom/black_patches0", "below", 0, 276, 10, "x", 2, 1),
@@ -1394,9 +1396,9 @@ rooms = [
          + [(57,y) for y in range(16,33)]
          + [(x,15) for x in range(36,45)]
          + [(x,15) for x in range(48,57)],
-         [Exit((45,33), "down", 1, (11,0)),
-          Exit((46,33), "down", 1, (12,0)),
-          Exit((47,33), "down", 1, (13,0))]),
+         [Exit(Coordinates(45, 33), "down", 1, Coordinates(11, 0)),
+          Exit(Coordinates(46, 33), "down", 1, Coordinates(12, 0)),
+          Exit(Coordinates(47, 33), "down", 1, Coordinates(13, 0))]),
     Room("Room 3", load("room3/background.png"),
          [Extra("TESSELATEsharedroom/lava_back_glow0", "below", 0, 0, 0, 0, 5, 0.2),
           Extra("TESSELATEsharedroom/black_patches0", "below", 0, 0, 10, "x", 2, 1),
@@ -1410,10 +1412,10 @@ rooms = [
 
 
 current_room = rooms[0]
-vincent = Player("Vincent Human", 4, (7,7), "down", 15, 0, 0, 1000, 1000)
-mean_slime = Npc("Enemy Slime", 6, (0,4), "right", 15, -1, 50, 80, 500, 500)
-firebolt = Ability("Firebolt", 6, (0,0), "right", 45, 2, 100, 2, 10)
-inferno = Ability("Inferno", 12, (0,0), "down", 90, 3, 200, 2, 10)
+vincent = Player("Vincent Human", 4, Coordinates(7, 7), "down", 15, 0, 0, 1000, 1000)
+mean_slime = Npc("Enemy Slime", 6, Coordinates(0, 4), "right", 15, -1, 50, 80, 500, 500)
+firebolt = Ability("Firebolt", 6, Coordinates(0, 0), "right", 45, 2, 100, 2, 10)
+inferno = Ability("Inferno", 12, Coordinates(0, 0), "down", 90, 3, 200, 2, 10)
 inferno.unlocked = True
 inferno.dead = True
 
@@ -1422,24 +1424,8 @@ frame = 1   # Storing the current frame as a variable
 
 # Program window while loop
 while session.is_running:
-    session.uptime = time.time() - session.start_time
+    session.loop()
 
-    session.mouse.reset_buttons()
-    session.mouse.update_coordinates()
-    session.keys.reset()
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            session.is_running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            session.mouse.process_button_down(event)
-        elif event.type == pygame.MOUSEBUTTONUP:
-            session.mouse.process_button_up(event)
-        elif event.type == pygame.KEYDOWN:
-            session.keys.process_key_down(event)
-        elif event.type == pygame.KEYUP:
-            session.keys.process_key_up(event)
-    ## Handling user inputs/Displaying the game
     if frame == 1:
         introduction.preview()
 
@@ -1534,8 +1520,8 @@ while session.is_running:
                         cutscene_start_time = session.uptime - 60
                 elif cutscene_time < 62.4:
                     if not coordinates_set:                        
-                        star.x += 70*(vincent.position[0] - 12)
-                        flux.x += 70*(vincent.position[0] - 12)
+                        star.x += 70*(vincent.position.x - 12)
+                        flux.x += 70*(vincent.position.x - 12)
                         coordinates_set = True
                     star.display(current_room, vincent)
                     session.screen.blit(vincent.image, (vincent.x,vincent.y))
@@ -1692,11 +1678,11 @@ while session.is_running:
                         portal_burn.x = placed_portal.x - 111
                         portal.y = placed_portal.y - 84
                         portal_burn.y = placed_portal.y - 119
-                        current_room.exits.append(Exit((portal_x,portal_y), "left", 3, (5,5)))
-                        current_room.exits.append(Exit((portal_x,portal_y), "up", 3, (5,5)))
-                        current_room.exits.append(Exit((portal_x,portal_y), "right", 3, (5,5)))
-                        current_room.exits.append(Exit((portal_x,portal_y), "down", 3, (5,5)))
-                    fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
+                        current_room.exits.append(Exit(Coordinates(portal_x, portal_y), "left", 3, Coordinates(5, 5)))
+                        current_room.exits.append(Exit(Coordinates(portal_x, portal_y), "up", 3, Coordinates(5, 5)))
+                        current_room.exits.append(Exit(Coordinates(portal_x, portal_y), "right", 3, Coordinates(5, 5)))
+                        current_room.exits.append(Exit(Coordinates(portal_x, portal_y), "down", 3, Coordinates(5, 5)))
+                    fade_screen.fill((255,255,255,255*(1-0.5*cutscene_time)))
                     session.screen.blit(fade_screen, (0,0))
                 else:
                     cutscene7_played = True
@@ -1841,11 +1827,11 @@ while session.is_running:
                 cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene0"
-            elif not cutscene1_played and vincent.room == 1 and vincent.position[1] < 7 and vincent.movement_cooldown == 0:
+            elif not cutscene1_played and vincent.room == 1 and vincent.position.y < 7 and vincent.movement_cooldown == 0:
                 cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene1"
-            elif not cutscene2_played and vincent.room == 2 and vincent.position[1] < 26 and vincent.movement_cooldown == 0:
+            elif not cutscene2_played and vincent.room == 2 and vincent.position.y < 26 and vincent.movement_cooldown == 0:
                 cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene2"
@@ -1868,7 +1854,7 @@ while session.is_running:
                         if vincent.alive:
                             mean_slime.find_route(current_room, vincent.position)
                         else:
-                            mean_slime.find_route(current_room, (vincent.position[0]-10, vincent.position[1]))
+                            mean_slime.find_route(current_room, (vincent.position.x-10, vincent.position.y))
                         mean_slime.change_orientation()
                         mean_slime.change_position(current_room)
                         mean_slime.change_image()
@@ -1966,40 +1952,40 @@ while session.is_running:
 
                 if mean_slime.dead and not drop in rooms[2].extras and not "slime_chunk" in inventory and not slime_portal in rooms[2].extras:
                     current_room.extras.append(drop)
-                    drop.x = current_room.grey_left + current_room.square_size[0]*mean_slime.position[0] - 180
-                    drop.y = current_room.grey_up + current_room.square_size[1]*mean_slime.position[1] - 130
+                    drop.x = current_room.grey_left + current_room.square_size[0]*mean_slime.position.x - 180
+                    drop.y = current_room.grey_up + current_room.square_size[1]*mean_slime.position.y - 130
                     loot.items[0] = "slime_chunk"
 
                 if not loot and drop in current_room.extras:
                     current_room.extras.remove(drop)
-                    mean_slime.position = (-10,-10)
+                    mean_slime.position = Coordinates(-10,-10)
 
                 if session.keys.tab and not show_spellbook:
                     show_spellbook = True
 
                 if session.keys.e:
                     if not cutscene3_played:
-                        if is_interactable((46,20)):
+                        if is_interactable(Coordinates(46, 20)):
                             current_room.extras.remove(book_item)
                             current_room.extras.remove(book_light)
                             cutscene_playing = True
                             cutscene_start_time = session.uptime
                             current = "cutscene3"
                     elif not cutscene4_played:
-                        if is_interactable((104,25)):
+                        if is_interactable(Coordinates(104, 25)):
                             cutscene_playing = True
                             cutscene_start_time = session.uptime
                             current = "cutscene4"
                     elif drop in current_room.extras:
                         if is_interactable(mean_slime.position):
                             loot.is_displaying = True
-                    elif "slime_chunk" in inventory and is_interactable((portal_x, portal_y)):
+                    elif "slime_chunk" in inventory and is_interactable(Coordinates(portal_x, portal_y)):
                         current_room.extras.append(slime_portal)
                         inventory.remove("slime_chunk")
                         slime_portal.x = placed_portal.x
                         slime_portal.y = placed_portal.y
 
-                if slime_portal in rooms[2].extras and firebolt.position == (portal_x,portal_y) and firebolt.alive and not cutscene7_played:
+                if slime_portal in rooms[2].extras and firebolt.position == Coordinates(portal_x, portal_y) and firebolt.alive and not cutscene7_played:
                     firebolt.alive = False
                     cutscene_playing = True
                     cutscene_start_time = session.uptime
@@ -2009,24 +1995,24 @@ while session.is_running:
                     firebolt.use(vincent)
 
                 if session.keys.r and cutscene4_played and not slime_portal in rooms[2].extras:  # Creating a portal
-                    if vincent.orientation == "left" and not (vincent.position[0]-1, vincent.position[1]) in (current_room.blocked + [(104,25)]) and not vincent.position[0]-1 < 0:
-                        portal_x = vincent.position[0]-1
-                        portal_y = vincent.position[1]
+                    if vincent.orientation == "left" and not (vincent.position.x-1, vincent.position.y) in (current_room.blocked + [(104,25)]) and not vincent.position.x-1 < 0:
+                        portal_x = vincent.position.x-1
+                        portal_y = vincent.position.y
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
-                    elif vincent.orientation == "up" and not (vincent.position[0], vincent.position[1]-1) in (current_room.blocked + [(104,25)]) and not vincent.position[1]-1 < 0:
-                        portal_y = vincent.position[1]-1
-                        portal_x = vincent.position[0]
+                    elif vincent.orientation == "up" and not (vincent.position.x, vincent.position.y-1) in (current_room.blocked + [(104,25)]) and not vincent.position.y-1 < 0:
+                        portal_y = vincent.position.y-1
+                        portal_x = vincent.position.x
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
-                    elif vincent.orientation == "right" and not (vincent.position[0]+1, vincent.position[1]) in (current_room.blocked + [(104,25)]) and not vincent.position[0]+1 > current_room.max_coord[0]:
-                        portal_x = vincent.position[0]+1
-                        portal_y = vincent.position[1]
+                    elif vincent.orientation == "right" and not (vincent.position.x+1, vincent.position.y) in (current_room.blocked + [(104,25)]) and not vincent.position.x+1 > current_room.max_coord.x:
+                        portal_x = vincent.position.x+1
+                        portal_y = vincent.position.y
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
-                    elif vincent.orientation == "down" and not (vincent.position[0], vincent.position[1]+1) in (current_room.blocked + [(104,25)]) and not vincent.position[1]+1 > current_room.max_coord[1]:
-                        portal_y = vincent.position[1]+1
-                        portal_x = vincent.position[0]
+                    elif vincent.orientation == "down" and not (vincent.position.x, vincent.position.y+1) in (current_room.blocked + [(104,25)]) and not vincent.position.y+1 > current_room.max_coord.y:
+                        portal_y = vincent.position.y+1
+                        portal_x = vincent.position.x
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
             

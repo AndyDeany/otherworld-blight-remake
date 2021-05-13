@@ -49,3 +49,25 @@ class Session:
     def caption(self, caption: str):
         self._caption = caption
         pygame.display.set_caption(caption)
+
+    def event_handling(self):
+        """Run the code for the main event loop to deal with user inputs/actions."""
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.is_running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                self.mouse.process_button_down(event)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                self.mouse.process_button_up(event)
+            elif event.type == pygame.KEYDOWN:
+                self.keys.process_key_down(event)
+            elif event.type == pygame.KEYUP:
+                self.keys.process_key_up(event)
+
+    def loop(self):
+        """Run the main program loop."""
+        self.uptime = time.time() - self.start_time
+        self.mouse.reset_buttons()
+        self.mouse.update_coordinates()
+        self.keys.reset()
+        self.event_handling()
