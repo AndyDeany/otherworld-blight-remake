@@ -73,7 +73,6 @@ show_hud = False
 show_spellbook = False
 levelling_up = False
 levelup_frame = 0
-cutscene_playing = False
 movement_started = False
 #display_options = False
 #display_sure = False
@@ -449,7 +448,7 @@ class Character(Base):    # maybe add an "id" attribute. One to identify each ob
     # Changes the x and y grid coordinates of the character
     def move(self, room, direction):
         """returns True if desired position is valid"""
-        if not self.movement_cooldown and not cutscene_playing and self.alive:
+        if not self.movement_cooldown and current[:8] != "cutscene" and self.alive:
             if (direction == "left"
                 and (not (self.position.x - 1, self.position.y) in room.blocked)
                 and (self.position.x > 0 or self.position.x-1 in
@@ -1495,7 +1494,6 @@ while session.is_running:
                         cutscene_start_time = session.uptime - 10017
                 else:
                     cutscene0_played = True
-                    cutscene_playing = False
                     current = "in game"
             
             elif current[8] == "1":
@@ -1563,7 +1561,6 @@ while session.is_running:
                     session.audio.music.play(AudioClip("main.ogg", 0.5))
                     coordinates_set = False
                     cutscene1_played = True
-                    cutscene_playing = False
                     current = "in game"
                 
             elif current[8] == "2":
@@ -1581,7 +1578,6 @@ while session.is_running:
                         cutscene_start_time = session.uptime - 10002
                 else:
                     cutscene2_played = True
-                    cutscene_playing = False
                     current = "in game"
             
             elif current[8] == "3":
@@ -1630,7 +1626,6 @@ while session.is_running:
                     firebolt.unlocked = True
                     spells.append("firebolt")
                     cutscene3_played = True
-                    cutscene_playing = False
                     current = "in game"
             
             elif current[8] == "4":
@@ -1649,7 +1644,6 @@ while session.is_running:
                     mean_slime.moves = ["right" for n in range(100)] + ["down" for n in range(10)]
                     cutscene4_played = True
                     current_room.extras.append(placed_portal)
-                    cutscene_playing = False
                     current = "in game"
             
             elif current[8] == "5":
@@ -1660,7 +1654,6 @@ while session.is_running:
                         cutscene_start_time = session.uptime - 10000
                 else:
                     cutscene5_played = True
-                    cutscene_playing = False
                     current = "in game"
             
             elif current[8] == "7":
@@ -1686,7 +1679,6 @@ while session.is_running:
                     session.screen.blit(fade_screen, (0,0))
                 else:
                     cutscene7_played = True
-                    cutscene_playing = False
                     current = "in game"
             
             elif current[8] == "8":
@@ -1725,7 +1717,6 @@ while session.is_running:
                     session.audio.music.play(AudioClip("boss.ogg", 0.5))
                     firebolt.room = 3
                     cutscene8_played = True
-                    cutscene_playing = False
                     current = "in game"
                     
             elif current[8] == "9":
@@ -1808,8 +1799,7 @@ while session.is_running:
                     session.screen.blit(credits_images[6], (0,0))
                 else:
                     session.screen.blit(credits_images[6], (0,0))
-                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:                        
-                        cutscene_playing = False
+                    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         session.audio.stop()
                         current = "main menu"   #(maybe), prolly go to credits isnt it
         
@@ -1824,19 +1814,15 @@ while session.is_running:
                     
         elif current == "in game":
             if not cutscene0_played:
-                cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene0"
             elif not cutscene1_played and vincent.room == 1 and vincent.position.y < 7 and vincent.movement_cooldown == 0:
-                cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene1"
             elif not cutscene2_played and vincent.room == 2 and vincent.position.y < 26 and vincent.movement_cooldown == 0:
-                cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene2"
             elif not cutscene8_played and vincent.room == 3:
-                cutscene_playing = True
                 cutscene_start_time = session.uptime
                 current = "cutscene8"
             else:
@@ -1890,7 +1876,6 @@ while session.is_running:
                         firebolt.alive = False
 
                     if zaal_life <= 0:
-                        cutscene_playing = True
                         cutscene_start_time = session.uptime
                         session.audio.stop()
                         current_room.extras.append(portal)
@@ -1946,7 +1931,6 @@ while session.is_running:
                     levelup_frame += 1
 
                 if not cutscene5_played and vincent.level == 2 and not levelling_up:
-                    cutscene_playing = True
                     cutscene_start_time = session.uptime
                     current = "cutscene5"
 
@@ -1968,12 +1952,10 @@ while session.is_running:
                         if is_interactable(Coordinates(46, 20)):
                             current_room.extras.remove(book_item)
                             current_room.extras.remove(book_light)
-                            cutscene_playing = True
                             cutscene_start_time = session.uptime
                             current = "cutscene3"
                     elif not cutscene4_played:
                         if is_interactable(Coordinates(104, 25)):
-                            cutscene_playing = True
                             cutscene_start_time = session.uptime
                             current = "cutscene4"
                     elif drop in current_room.extras:
@@ -1987,7 +1969,6 @@ while session.is_running:
 
                 if slime_portal in rooms[2].extras and firebolt.position == Coordinates(portal_x, portal_y) and firebolt.alive and not cutscene7_played:
                     firebolt.alive = False
-                    cutscene_playing = True
                     cutscene_start_time = session.uptime
                     current = "cutscene7"
 
