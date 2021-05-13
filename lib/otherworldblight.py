@@ -9,6 +9,9 @@ import pygame
 from moviepy.editor import VideoFileClip
 
 pygame.init()
+monitor_info = pygame.display.Info()
+MONITOR_WIDTH = monitor_info.current_w
+MONITOR_HEIGHT = monitor_info.current_h
 os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
 screen = pygame.display.set_mode((1920, 1080), pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.NOFRAME)
 
@@ -28,7 +31,7 @@ def log(error, error_message):
         except:
             error_log.write(str(datetime.datetime.utcnow())[0:19] + " - " + error_message + ": Details Unknown\n")
         error_log.close()
-    except Exception as error:  # Likely never happens as no reliance on file_directory anymore - remove.
+    except Exception:  # Likely never happens as no reliance on file_directory anymore - remove.
         ctypes.windll.user32.MessageBoxW(0, "An error has occurred:\n\n    " + error_message + ".\n\n\nThis error occurred very early during game initialisation and could not be logged.", "Error", 1)
         raise
 
@@ -97,8 +100,6 @@ dropfont = pygame.font.SysFont("Impact", 20, False, False)
 
 screen_width = session.screen.get_width()
 screen_height = session.screen.get_height()
-MONITOR_WIDTH = screen_width
-MONITOR_HEIGHT = screen_height
 
 fade_screen = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)    # An extra surface for put on top of the screen, for fading
 
@@ -107,24 +108,28 @@ fade_screen = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)    
 def reinitialise_screen(resolution=(screen_width,screen_height), mode="fullscreen"):
     global screen, screen_width, screen_height
     screen_width, screen_height = resolution
+    flags = pygame.HWSURFACE | pygame.DOUBLEBUF
     if mode == "fullscreen":
-        screen = pygame.display.set_mode(resolution, pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.FULLSCREEN)
+        flags |= pygame.FULLSCREEN
     elif mode == "windowed":
-        os.environ['SDL_VIDEO_WINDOW_POS'] = str((MONITOR_WIDTH - screen_width)//2) + "," + str((MONITOR_HEIGHT - screen_height)//2)
-        screen = pygame.display.set_mode(resolution, pygame.HWSURFACE|pygame.DOUBLEBUF)
+        x, y = (MONITOR_WIDTH - screen_width)//2, (MONITOR_HEIGHT - screen_height)//2
+        os.environ['SDL_VIDEO_WINDOW_POS'] = f"{x},{y}"
     elif mode == "borderless":
+        flags |= pygame.NOFRAME
         os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
-        screen = pygame.display.set_mode(resolution, pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.NOFRAME)
     else:
         raise ValueError("Unknown mode for reinitialise_screen(): " + mode + "[coding syntax error].")
+    screen = pygame.display.set_mode(resolution, flags)
 
 
-### ---------- FUNCTION DEFINING - START ---------- ###
+# FUNCTION DEFINING --------------------------------------------------------------------------------
 
 # Checking if the given arrow key has been held down the longest
 def is_longest_held(direction_held_time):
-    longest = max(session.keys.left_arrow.time_held, session.keys.right_arrow.time_held, session.keys.up_arrow.time_held, session.keys.down_arrow.time_held, session.keys.a.time_held,
-                  session.keys.d.time_held, session.keys.w.time_held, session.keys.s.time_held)
+    longest = max(session.keys.left_arrow.time_held, session.keys.right_arrow.time_held,
+                  session.keys.up_arrow.time_held, session.keys.down_arrow.time_held,
+                  session.keys.a.time_held, session.keys.d.time_held,
+                  session.keys.w.time_held, session.keys.s.time_held)
     return direction_held_time == longest
 
 
