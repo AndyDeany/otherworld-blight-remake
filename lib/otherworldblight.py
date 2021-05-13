@@ -1,10 +1,22 @@
+import os
+import datetime
+import time
+import random
 import ctypes
+from operator import attrgetter
 
+import pygame
 from moviepy.editor import VideoFileClip
+
+pygame.init()
+os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
+screen = pygame.display.set_mode((1920, 1080), pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.NOFRAME)
+
 
 from lib.session import Session
 from lib.audio import Audio
 
+from lib.loot import Loot
 
 
 # Defining the error logging function
@@ -48,27 +60,13 @@ def load(file_name):
         raise Exception("Invalid file type")
 
 
-### ---------- IMPORTING MODULES - START ---------- ###
-import os
-os.environ["SDL_VIDEODRIVER"] = "windib"
-import pygame
-pygame.init()
-
-import datetime, time
-import random
-from operator import attrgetter
-
-### ---------- IMPORTING MODULES - END ---------- ###
-
 
 ### ---------- VARIABLE ASSIGNMENT - START ---------- ###
 
 ## Assigning essential game variables
-session = Session()
+session = Session(screen)
 fps = 30
 error_time = 0
-display_loot_menu = False
-current_loot_slot = 0
 show_hud = False
 show_spellbook = False
 levelling_up = False
@@ -100,10 +98,8 @@ dropfont = pygame.font.SysFont("Impact", 20, False, False)
 
 # Setting the screen resolution and creating the screen
 
-os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
-screen = pygame.display.set_mode((1920,1080), pygame.HWSURFACE|pygame.DOUBLEBUF|pygame.NOFRAME)
-screen_width = screen.get_width()
-screen_height = screen.get_height()
+screen_width = session.screen.get_width()
+screen_height = session.screen.get_height()
 MONITOR_WIDTH = screen_width
 MONITOR_HEIGHT = screen_height
 
@@ -241,81 +237,48 @@ def number_drop(number_type, character, value):
 
 def display_number_drop(number_drop_item):
     global number_drops
-    screen.blit(dropfont.render(number_drop_item[3], True, number_drop_item[2]),
+    session.screen.blit(dropfont.render(number_drop_item[3], True, number_drop_item[2]),
                 (number_drop_item[0], number_drop_item[1]))
     return number_drop_item[1] - 3
-
-
-# Defining a function to display current loot on the floor
-def display_loot():
-    """returns False when the loot menu is closed"""
-    global loot, current_loot_slot
-
-    if session.keys.escape or session.keys.backspace:
-        return False
-
-    screen.blit(loot_images["loot" + str(current_loot_slot)], (0, 0))
-
-    for index in range(len(loot)):
-        if loot[index] != "":
-            screen.blit(loot_images[loot[index]], (781, 225 + 89 * index))
-
-    screen.blit(loot_images["controls"], (0, 0))
-
-    if (session.keys.up_arrow or session.keys.w) and current_loot_slot > 0:
-        current_loot_slot -= 1
-    if (session.keys.down_arrow or session.keys.s) and current_loot_slot < 5:
-        current_loot_slot += 1
-
-    if session.keys.enter and loot[current_loot_slot] != "":
-        inventory.append(loot[current_loot_slot])
-        loot[current_loot_slot] = ""
-    if session.keys.e:
-        for item in loot:
-            if item != "":
-                inventory.append(item)
-        loot = ["" for nothing in range(6)]
-
-    return True
 
 
 # Defining a function that displays the spellbook
 def display_spellbook():
     if not cutscene6_played:
-        screen.blit(spellbook_images["spellbook_default"], (0, 0))
+        session.screen.blit(spellbook_images["spellbook_default"], (0, 0))
     else:
-        screen.blit(spellbook_images["firebolt1"], (0, 0))
-    screen.blit(spellbook_images["firebolt_uncharged"], (0, 0))
-    screen.blit(font.render(str(vincent[form].level), True, (199, 189, 189)), (610, 20))
-    screen.blit(font.render(str(vincent[form].skill_points), True, (199, 189, 189)), (1665, 20))
-    screen.blit(font.render(str(firebolt.level), True, (142, 0, 0)), (834, 239))
-    screen.blit(esc_exit, (0, 0))
+        session.screen.blit(spellbook_images["firebolt1"], (0, 0))
+    session.screen.blit(spellbook_images["firebolt_uncharged"], (0, 0))
+    session.screen.blit(font.render(str(vincent[form].level), True, (199, 189, 189)), (610, 20))
+    session.screen.blit(font.render(str(vincent[form].skill_points), True, (199, 189, 189)), (1665, 20))
+    session.screen.blit(font.render(str(firebolt.level), True, (142, 0, 0)), (834, 239))
+    session.screen.blit(esc_exit, (0, 0))
 
 
 # Defining a function that displays the Heads-up Display (HUD)
 def display_hud():
-    screen.blit(hud_images["expback"], (0, 0))
-    screen.blit(hud_images["expbar"], (728, 951), (0, 0, (vincent[form].exp / 100.0) * 467, 130))
-    screen.blit(hud_images["hud"], (0, 0))
-    screen.blit(hud_images["health_orb"],
+    session.screen.blit(hud_images["expback"], (0, 0))
+    session.screen.blit(hud_images["expbar"], (728, 951), (0, 0, (vincent[form].exp / 100.0) * 467, 130))
+    session.screen.blit(hud_images["hud"], (0, 0))
+    session.screen.blit(hud_images["health_orb"],
                 (1025, 994 + (1 - (vincent[form].current_life / float(vincent[form].max_life))) * 87), (
                 0, (1 - (vincent[form].current_life / float(vincent[form].max_life))) * 87, 123,
                 (vincent[form].current_life / float(vincent[form].max_life)) * 87))
 
     for index in range(len(spells)):
         if abilities[spells[index]].cooldown > 0:
-            screen.blit(hud_images[spells[index] + "_cooldown"], (760 + 51 * index, 1029))
+            session.screen.blit(hud_images[spells[index] + "_cooldown"], (760 + 51 * index, 1029))
         else:
-            screen.blit(hud_images[spells[index]], (760 + 51 * index, 1029))
+            session.screen.blit(hud_images[spells[index]], (760 + 51 * index, 1029))
 
     for index in range(len(inventory)):
-        screen.blit(hud_images[inventory[index]], (964 + 51 * index, 1029))
+        session.screen.blit(hud_images[inventory[index]], (964 + 51 * index, 1029))
 
 
 # Defining a function that displays dialogue boxes with the respective text
 def display_dialogue(character, dialogue_number):
-    screen.blit(dialogue[character + "box"], (0, 0))
-    screen.blit(dialogue[character + str(dialogue_number)], (765, 895))
+    session.screen.blit(dialogue[character + "box"], (0, 0))
+    session.screen.blit(dialogue[character + str(dialogue_number)], (765, 895))
     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
         return False
     return True
@@ -428,20 +391,20 @@ class Menu:
     
     # Displays the menu on the screen
     def display(self):
-        screen.blit(self.background, (0,0))
+        session.screen.blit(self.background, (0,0))
         for item in self.permanent:
-            screen.blit(item, (0,0))
+            session.screen.blit(item, (0,0))
 
         for option in range(len(self.options)):
             if self.sliders[option][0]:
-                screen.blit(self.options[option][0], ((960 + 4*self.settings[option])*(screen_width/1920.0), self.sliders[option][1]*(screen_height/1080.0)))
+                session.screen.blit(self.options[option][0], ((960 + 4*self.settings[option])*(screen_width/1920.0), self.sliders[option][1]*(screen_height/1080.0)))
 
         if not self.sliders[self.current_selection][0]:
-            screen.blit(self.options[self.current_selection][self.settings[self.current_selection]], (0,0))
+            session.screen.blit(self.options[self.current_selection][self.settings[self.current_selection]], (0,0))
 
         for index in range(len(self.options)):
             if len(self.options[index]) > 1:
-                screen.blit(self.options[index][self.settings[index]], (0,0))
+                session.screen.blit(self.options[index][self.settings[index]], (0,0))
         
     # Changes the user's current selection in the menu
     def change_selection(self):
@@ -941,21 +904,21 @@ class Extra(object):
                 if self.image_name[0:9] == "TESSELATE":
                     for horizontal in range(-1,(room.width//self.width) + 1):
                         for vertical in range(-1,(room.height//self.height) + 1):
-                            screen.blit(self.image, (room.x + self.x + horizontal*self.width, room.y + self.y + vertical*self.height))
+                            session.screen.blit(self.image, (room.x + self.x + horizontal*self.width, room.y + self.y + vertical*self.height))
                 else:
-                    screen.blit(self.image, (room.x + self.x, room.y + self.y))
+                    session.screen.blit(self.image, (room.x + self.x, room.y + self.y))
 
                 if self.scroll_speed != 0:   # Showing an extra copy of the image file for smooth scrolling
                     if self.scroll_speed > 0:
                         if self.scroll_axis == "x":
-                            screen.blit(self.image, (room.x + self.x - room.width, room.y + self.y))
+                            session.screen.blit(self.image, (room.x + self.x - room.width, room.y + self.y))
                         elif self.scroll_axis == "y":
-                            screen.blit(self.image, (room.x + self.x, room.y + self.y - room.height))
+                            session.screen.blit(self.image, (room.x + self.x, room.y + self.y - room.height))
                     else:   # When the scroll speed is negative
                         if self.scroll_axis == "x":
-                            screen.blit(self.image, (room.x + self.x + room.width, room.y + self.y))
+                            session.screen.blit(self.image, (room.x + self.x + room.width, room.y + self.y))
                         elif self.scroll_axis == "y":
-                            screen.blit(self.image, (room.x + self.x, room.y + self.y + room.height))
+                            session.screen.blit(self.image, (room.x + self.x, room.y + self.y + room.height))
             
             
 class Exit(object):
@@ -1015,7 +978,7 @@ class Room(object):
     def display_room(self, player):
         """Displays everything that will be on screen for the room"""
         self.calculate_player_position(player)  # Calculating the player's and canvas's x and y coordinates on the screen
-        screen.blit(self.canvas, (self.x,self.y))   # Blitting the canvas first, so everything else goes on top of it
+        session.screen.blit(self.canvas, (self.x,self.y))   # Blitting the canvas first, so everything else goes on top of it
 
         for extra in self.extras:   # Showing the extras that go below the characters
             if extra.placement == "below":
@@ -1024,7 +987,7 @@ class Room(object):
         for npc in npcs:    # Displaying all the npcs. This may require an order for bosses. Maybe the npcs list should be sorted by a "(display_)priority" attribute?
             if npc.room == self.number and not npc.dead:   # Only displaying npcs that are in the current room
                 self.display_npc(npc)
-        screen.blit(player.image, (player.x,player.y))  # Displaying the player last, so they are always on top
+        session.screen.blit(player.image, (player.x,player.y))  # Displaying the player last, so they are always on top
         for name, ability in abilities.items():
             if ability.room == self.number and ability.displayed:
                 self.display_npc(ability)
@@ -1105,7 +1068,7 @@ class Room(object):
         npc.y = self.grey_up + self.square_size[1]*(npc.position[1] - 1) + (2*self.square_size[1] - npc.height) + self.y
         npc.x = add_movement(self, npc, "x", "image")
         npc.y = add_movement(self, npc, "y", "image")
-        screen.blit(npc.image, (npc.x,npc.y))
+        session.screen.blit(npc.image, (npc.x,npc.y))
 
 ### ---------- CLASS DEFINING - END ---------- ###
         
@@ -1270,19 +1233,6 @@ death_images = {
                 "Inferno":[{direction:load("inferno/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(11)],
 }
 
-# Loading loot images:
-loot_images = {
-    "controls":load("loot/controls.png"),
-    "loot0":load("loot/loot0.png"),
-    "loot1":load("loot/loot1.png"),
-    "loot2":load("loot/loot2.png"),
-    "loot3":load("loot/loot3.png"),
-    "loot4":load("loot/loot4.png"),
-    "loot5":load("loot/loot5.png"),
-    "slime_chunk":load("loot/slime_chunk.png")
-}
-
-
 # Loading tutorial images
 tutorial = [load("tutorial/tutorial" + str(n) + ".png") for n in range(13)]
 
@@ -1334,7 +1284,7 @@ introduction = load("introduction.mpg")
 current = "main menu"
 npcs = [] # A list of all currently loaded npcs. All Npc objects are appended to this list when they are initialised.
 abilities = {}  # A dictionary of all currently loaded abilities
-loot = ["" for nothing in range(6)]   # A list of loot that is currently available in the loot pile
+loot = Loot()
 spells = [] # The characters unlocked spells
 inventory = [] # The characters inventory
 number_drops = []   # The list of current number drops
@@ -1547,9 +1497,9 @@ while ongoing:
             session.audio.voice_volume = menus["options menu"].settings[3]
                 
         elif current == "controls":
-            screen.blit(menus["main menu"].background, (0,0))
-            screen.blit(controls_page, (0,0))
-            screen.blit(esc_exit, (0,0))
+            session.screen.blit(menus["main menu"].background, (0,0))
+            session.screen.blit(controls_page, (0,0))
+            session.screen.blit(esc_exit, (0,0))
             
             if session.keys.escape or session.keys.backspace:
                 current = "main menu"
@@ -1565,15 +1515,15 @@ while ongoing:
                 vincent[form].change_image()
             if current[8] == "0":
                 if cutscene_time < 3:
-                    screen.fill((0,0,0))
+                    session.screen.fill((0,0,0))
                 elif cutscene_time < 5:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(Audio("thunder.ogg"))
                         session.audio.sound.play(Audio("portal.ogg", 0.1), loop=-1)
-                    screen.fill((0,0,0))
+                    session.screen.fill((0,0,0))
                     portal.display(current_room, vincent[form])
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-3))))
-                    screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10:
                     portal.display(current_room, vincent[form])
                     if not display_dialogue("vincent", 0):
@@ -1583,14 +1533,14 @@ while ongoing:
                         session.audio.sound.play(Audio("thunder.ogg"))
                     current_room.display_room(vincent[form])
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-10))))
-                    screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 17:
                     current_room.display_room(vincent[form])
                     if not display_dialogue("vincent", 1):
                         cutscene_start_time = current_time - 17
                 elif cutscene_time < 10017:
                     current_room.display_room(vincent[form])
-                    screen.blit(tutorial[0], (0,0))
+                    session.screen.blit(tutorial[0], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 10017
                 else:
@@ -1624,26 +1574,26 @@ while ongoing:
                         flux.x += 70*(vincent[form].position[0] - 12)
                         coordinates_set = True
                     star.display(current_room, vincent[form])
-                    screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
+                    session.screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
                     current_room.extras[5].display(current_room, vincent[form])
                     if cutscene_time > 61 and not session.audio.sound.is_playing:
                         session.audio.sound.play(Audio("transform.ogg"))
                 elif cutscene_time < 63.7:                
                     star.display(current_room, vincent[form])
-                    screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
+                    session.screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))
                     flux.display(current_room, vincent[form])                    
                     current_room.extras[5].display(current_room, vincent[form])
                     fade_screen.fill((151, 0, 0, int(255*((1/1.3)*(cutscene_time-62.4)))))
-                    screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 64:
-                    screen.fill((151,0,0))
+                    session.screen.fill((151,0,0))
                     if form == "human":
                         transform()
                 elif cutscene_time < 66:
-                    screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))                    
+                    session.screen.blit(vincent[form].image, (vincent[form].x,vincent[form].y))                    
                     current_room.extras[5].display(current_room, vincent[form])
                     fade_screen.fill((151, 0, 0, int(255*(1-0.5*(cutscene_time-64)))))
-                    screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 76:
                     if not display_dialogue("mysterious", 0):
                         cutscene_start_time = current_time - 76
@@ -1674,9 +1624,9 @@ while ongoing:
                         current_room.extras.append(book_item)
                         current_room.extras.append(book_light)
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
-                    screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10002:
-                    screen.blit(tutorial[1], (0,0))
+                    session.screen.blit(tutorial[1], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 10002
                 else:
@@ -1688,44 +1638,44 @@ while ongoing:
                 current_room.display_room(vincent[form])
                 if cutscene_time < 10000:
                     display_spellbook()
-                    screen.blit(tutorial[2], (0,0))
+                    session.screen.blit(tutorial[2], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 10000
                 elif cutscene_time < 20000:
                     display_hud()
-                    screen.blit(hud_images["firebolt"], (760, 1029))
+                    session.screen.blit(hud_images["firebolt"], (760, 1029))
                     display_spellbook()
                     if session.keys.escape or session.keys.backspace:
                         cutscene_start_time = current_time - 20000
                 elif cutscene_time < 30000:
-                    screen.blit(tutorial[3], (0,0))
+                    session.screen.blit(tutorial[3], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 30000
                 elif cutscene_time < 40000:
-                    screen.blit(tutorial[4], (0,0))
+                    session.screen.blit(tutorial[4], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 40000
                 elif cutscene_time < 50000:
-                    screen.blit(tutorial[5], (0,0))
+                    session.screen.blit(tutorial[5], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 50000
                 elif cutscene_time < 60000:
-                    screen.blit(tutorial[6], (0,0))
+                    session.screen.blit(tutorial[6], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 60000
                 elif cutscene_time < 70000:
-                    screen.blit(tutorial[7], (0,0))
+                    session.screen.blit(tutorial[7], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 70000
                 elif cutscene_time < 80000:
                     display_hud()                    
-                    screen.blit(hud_images["firebolt"], (760, 1029))
-                    screen.blit(tutorial[8], (0,0))
+                    session.screen.blit(hud_images["firebolt"], (760, 1029))
+                    session.screen.blit(tutorial[8], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 80000
                 else:
                     display_hud()
-                    screen.blit(hud_images["firebolt"], (760, 1029))
+                    session.screen.blit(hud_images["firebolt"], (760, 1029))
                     show_hud = True
                     firebolt.unlocked = True
                     spells.append("firebolt")
@@ -1739,7 +1689,7 @@ while ongoing:
                     if not display_dialogue("vincent", 6):
                         cutscene_start_time = current_time - 25
                 elif cutscene_time < 10025:
-                    screen.blit(tutorial[9], (0,0))
+                    session.screen.blit(tutorial[9], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 10025
                 else:
@@ -1755,7 +1705,7 @@ while ongoing:
             elif current[8] == "5":
                 current_room.display_room(vincent[form])
                 if cutscene_time < 10000:
-                    screen.blit(tutorial[10], (0,0))
+                    session.screen.blit(tutorial[10], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = current_time - 10000
                 else:
@@ -1783,7 +1733,7 @@ while ongoing:
                         current_room.exits.append(Exit((portal_x,portal_y), "right", 3, (5,5)))
                         current_room.exits.append(Exit((portal_x,portal_y), "down", 3, (5,5)))
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
-                    screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0,0))
                 else:
                     cutscene7_played = True
                     cutscene_playing = False
@@ -1791,12 +1741,12 @@ while ongoing:
             
             elif current[8] == "8":
                 current_room.display_room(vincent[form])                
-                screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
+                session.screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(Audio("thunder.ogg"))
                     fade_screen.fill((255, 255, 255, int(255*(1-0.5*cutscene_time))))
-                    screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0,0))
                 elif cutscene_time < 10:                    
                     if not display_dialogue("vincent", 1):
                         cutscene_start_time = current_time - 10
@@ -1834,7 +1784,7 @@ while ongoing:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(Audio("thunder.ogg"))
                     fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
-                    screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0,0))
                 else:
                     current = "credits"
             
@@ -1842,72 +1792,72 @@ while ongoing:
             cutscene_time = current_time - cutscene_start_time
             if cutscene_time < 12.0/fps:
                 current_room.display_room(vincent[form])
-                screen.blit(zaal_images["death"][int(cutscene_time*fps)], (current_room.x + 840, current_room.y + 71))
+                session.screen.blit(zaal_images["death"][int(cutscene_time*fps)], (current_room.x + 840, current_room.y + 71))
             elif cutscene_time < 5:
                 current_room.display_room(vincent[form])
                 fade_screen.fill((0,0,0,51*cutscene_time))
-                screen.blit(fade_screen, (0,0))
+                session.screen.blit(fade_screen, (0,0))
             else:
-                screen.blit(credits_images[7], (0,0))
+                session.screen.blit(credits_images[7], (0,0))
                 if cutscene_time < 7:
                     credits_images[0].set_alpha(127.5*(cutscene_time-5))
-                    screen.blit(credits_images[0], (0,0))
+                    session.screen.blit(credits_images[0], (0,0))
                 elif cutscene_time < 10:
-                    screen.blit(credits_images[0], (0,0))
+                    session.screen.blit(credits_images[0], (0,0))
                 elif cutscene_time < 12:
                     credits_images[0].set_alpha(255*(1-0.5*(cutscene_time-10)))
-                    screen.blit(credits_images[0], (0,0))
+                    session.screen.blit(credits_images[0], (0,0))
                     
                 elif cutscene_time < 14:
                     credits_images[1].set_alpha(127.5*(cutscene_time-12))
-                    screen.blit(credits_images[1], (0,0))
+                    session.screen.blit(credits_images[1], (0,0))
                 elif cutscene_time < 17:
-                    screen.blit(credits_images[1], (0,0))
+                    session.screen.blit(credits_images[1], (0,0))
                 elif cutscene_time < 19:
                     credits_images[1].set_alpha(255*(1-0.5*(cutscene_time-17)))
-                    screen.blit(credits_images[1], (0,0))
+                    session.screen.blit(credits_images[1], (0,0))
                     
                 elif cutscene_time < 21:
                     credits_images[2].set_alpha(127.5*(cutscene_time-19))
-                    screen.blit(credits_images[2], (0,0))
+                    session.screen.blit(credits_images[2], (0,0))
                 elif cutscene_time < 24:
-                    screen.blit(credits_images[2], (0,0))
+                    session.screen.blit(credits_images[2], (0,0))
                 elif cutscene_time < 26:
                     credits_images[2].set_alpha(255*(1-0.5*(cutscene_time-24)))
-                    screen.blit(credits_images[2], (0,0))
+                    session.screen.blit(credits_images[2], (0,0))
                     
                 elif cutscene_time < 28:
                     credits_images[3].set_alpha(127.5*(cutscene_time-26))
-                    screen.blit(credits_images[3], (0,0))
+                    session.screen.blit(credits_images[3], (0,0))
                 elif cutscene_time < 31:
-                    screen.blit(credits_images[3], (0,0))
+                    session.screen.blit(credits_images[3], (0,0))
                 elif cutscene_time < 33:
                     credits_images[3].set_alpha(255*(1-0.5*(cutscene_time-31)))
-                    screen.blit(credits_images[3], (0,0))
+                    session.screen.blit(credits_images[3], (0,0))
                     
                 elif cutscene_time < 35:
                     credits_images[4].set_alpha(127.5*(cutscene_time-33))
-                    screen.blit(credits_images[4], (0,0))
+                    session.screen.blit(credits_images[4], (0,0))
                 elif cutscene_time < 38:
-                    screen.blit(credits_images[4], (0,0))
+                    session.screen.blit(credits_images[4], (0,0))
                 elif cutscene_time < 40:
                     credits_images[4].set_alpha(255*(1-0.5*(cutscene_time-38)))
-                    screen.blit(credits_images[4], (0,0))
+                    session.screen.blit(credits_images[4], (0,0))
                     
                 elif cutscene_time < 42:
                     credits_images[5].set_alpha(127.5*(cutscene_time-40))
-                    screen.blit(credits_images[5], (0,0))
+                    session.screen.blit(credits_images[5], (0,0))
                 elif cutscene_time < 45:
-                    screen.blit(credits_images[5], (0,0))
+                    session.screen.blit(credits_images[5], (0,0))
                 elif cutscene_time < 47:
                     credits_images[5].set_alpha(255*(1-0.5*(cutscene_time-45)))
-                    screen.blit(credits_images[5], (0,0))
+                    session.screen.blit(credits_images[5], (0,0))
                     
                 elif cutscene_time < 49:
                     credits_images[6].set_alpha(127.5*(cutscene_time-47))
-                    screen.blit(credits_images[6], (0,0))
+                    session.screen.blit(credits_images[6], (0,0))
                 else:
-                    screen.blit(credits_images[6], (0,0))
+                    session.screen.blit(credits_images[6], (0,0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:                        
                         cutscene_playing = False
                         session.audio.stop()
@@ -1918,7 +1868,7 @@ while ongoing:
             if cutscene_time < 5:
                 current_room.display_room(vincent[form])
                 fade_screen.fill((0,0,0,51*cutscene_time))
-                screen.blit(fade_screen, (0,0))
+                session.screen.blit(fade_screen, (0,0))
             else:
                 current = "saves menu"             
                     
@@ -1943,7 +1893,7 @@ while ongoing:
                 vincent[form].check_death()
                 vincent[form].die()
                 firebolt.exist(current_room)
-                if not display_loot_menu:
+                if not loot.is_displaying:
                     vincent[form].change_orientation()
                     vincent[form].change_position(current_room)
                     vincent[form].check_exit(current_room)
@@ -1968,7 +1918,7 @@ while ongoing:
                 current_room.display_room(vincent[form])
 
                 if current_room.number == 3 and not cutscene8_played:
-                    screen.fill((0,0,0))
+                    session.screen.fill((0,0,0))
 
                 if current_room.number == 3 and cutscene8_played and vincent[form].alive:
                     inferno.exist(current_room)
@@ -1976,12 +1926,12 @@ while ongoing:
                     inferno.cast(vincent[form])
                     if zaal_animation > 0:
                         zaal_animation -= 1
-                        screen.blit(zaal_images["attack"][18-zaal_animation], (current_room.x + 840, current_room.y + 71))
+                        session.screen.blit(zaal_images["attack"][18-zaal_animation], (current_room.x + 840, current_room.y + 71))
                     else:
-                        screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
-                    screen.blit(zaal_images["health_back"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)))
-                    screen.blit(zaal_images["health"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)), (0,0,zaal_life,52))
-                    screen.blit(zaal_images["health_icon"], (1786,0))
+                        session.screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
+                    session.screen.blit(zaal_images["health_back"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)))
+                    session.screen.blit(zaal_images["health"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)), (0,0,zaal_life,52))
+                    session.screen.blit(zaal_images["health_icon"], (1786,0))
 
                     if firebolt.position in [(10,2), (11,2), (12,2), (10,3), (11,3), (12,3)] and firebolt.alive:
                         damage_dealt = int(firebolt.damage*(0.9 + 0.2*random.random()))
@@ -1998,9 +1948,9 @@ while ongoing:
                         portal.y = 600
                         current = "cutscene9"
 
-                if display_loot_menu:
-                    if not display_loot():
-                        display_loot_menu = False
+                if loot.is_displaying:
+                    if not loot.display(inventory):
+                        loot.is_displaying = False
                 elif session.keys.escape and not show_spellbook:    # Opening the in game options menu upon escape being pressed
                     current = "in game options menu"
 
@@ -2020,12 +1970,12 @@ while ongoing:
                     print(1)
                     if session.mouse.is_in(748, 499, 825, 576):
                         print(2)
-                        screen.blit(tutorial[12], (0,0))
+                        session.screen.blit(tutorial[12], (0,0))
                         if session.mouse.left and cutscene5_played and not cutscene6_played and vincent[form].skill_points > 0:
                             vincent[form].skill_points -= 1
                             cutscene6_played = True
                     elif session.mouse.is_in(579, 428, 656, 505):
-                        screen.blit(tutorial[11], (0,0))
+                        session.screen.blit(tutorial[11], (0,0))
                     if session.keys.escape or session.keys.backspace:
                         show_spellbook = False
 
@@ -2037,11 +1987,11 @@ while ongoing:
 
                 if levelling_up:
                     if levelup_frame < 22:
-                        screen.blit(levelup_images[levelup_frame//2], (0,0))
+                        session.screen.blit(levelup_images[levelup_frame//2], (0,0))
                     elif levelup_frame < 52:
-                        screen.blit(levelup_images[11], (0,0))
+                        session.screen.blit(levelup_images[11], (0,0))
                     elif levelup_frame < 58:
-                        screen.blit(levelup_images[(levelup_frame-28)//2], (0,0))
+                        session.screen.blit(levelup_images[(levelup_frame-28)//2], (0,0))
                     else:
                         levelup_frame = 0
                         levelling_up = False
@@ -2056,9 +2006,9 @@ while ongoing:
                     current_room.extras.append(drop)
                     drop.x = current_room.grey_left + current_room.square_size[0]*mean_slime.position[0] - 180
                     drop.y = current_room.grey_up + current_room.square_size[1]*mean_slime.position[1] - 130
-                    loot[0] = "slime_chunk"
+                    loot.items[0] = "slime_chunk"
 
-                if loot == ["" for nothing in range(6)] and drop in current_room.extras:
+                if not loot and drop in current_room.extras:
                     current_room.extras.remove(drop)
                     mean_slime.position = (-10,-10)
 
@@ -2080,7 +2030,7 @@ while ongoing:
                             current = "cutscene4"
                     elif drop in current_room.extras:
                         if is_interactable(mean_slime.position):
-                            display_loot_menu = True
+                            loot.is_displaying = True
                     elif "slime_chunk" in inventory and is_interactable((portal_x, portal_y)):
                         current_room.extras.append(slime_portal)
                         inventory.remove("slime_chunk")
@@ -2125,7 +2075,7 @@ while ongoing:
     try:
         if error_time > 0:
             error_time -= 1
-            screen.blit(load("error_message.png"), (1320*(screen_width/1920.0), 0))
+            session.screen.blit(load("error_message.png"), (1320*(screen_width/1920.0), 0))
     except Exception as error:
         log(error, "Failed to display error message")
 
