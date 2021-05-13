@@ -813,7 +813,7 @@ class Ability(Character):
 
 # The class for extra things that are shown as well as the canvas and characters in rooms                   
 class Extra(object):
-        def __init__(self, image_name, placement, x, y, scroll_speed=0, scroll_axis=0, rotations=1, rotation_interval=0, start_x="all", end_x="all", start_y="all", end_y="all"): # Default values are for when the extra should always be shown.
+        def __init__(self, image_name, placement, x, y, scroll_speed=0, scroll_axis=0, rotations=1, rotation_interval=0, start_x=None, end_x=None, start_y=None, end_y=None): # Default values are for when the extra should always be shown.
             self.image_name = image_name
             if image_name[0:9] in ["TESSELATE", "NEGATIVES"]:   # TESSELATE indicates that the image should be tesselated until the end of the screen. NEGATIVES indicates that the image should be shown if the player is NOT in the specified bounds
                 self.image = extra_images[image_name[9:]]
@@ -845,8 +845,8 @@ class Extra(object):
                         
         def display(self, room, player):
             # Checking if the player is within the coordinates at which the extra should be displayed
-            in_x = (self.start_x == "all" and self.end_x == "all") or self.start_x <= player.position[0] <= self.end_x
-            in_y = (self.start_y == "all" and self.end_y == "all") or self.start_y <= player.position[1] <= self.end_y
+            in_x = (self.start_x is None and self.end_x is None) or self.start_x <= player.position[0] <= self.end_x
+            in_y = (self.start_y is None and self.end_y is None) or self.start_y <= player.position[1] <= self.end_y
             show_extra = in_x and in_y
 
             if self.scroll_speed != 0:   # Changing the position of images that should scroll
@@ -914,7 +914,7 @@ class Room(object):
         self.width = canvas.get_width()
         self.height = canvas.get_height()
         self.square_size = square_size      # this NEEDS to be a multiple/division of the screen size, so that zoom room is maintained across all resolutions
-        ## The amounts of inaccessible terrain at each side of the canvas
+        # The amounts of inaccessible terrain at each side of the canvas
         self.grey_left = grey_left
         self.grey_up = grey_up
         self.grey_right = grey_right
@@ -922,8 +922,7 @@ class Room(object):
         self.max_coord = (((self.width - (grey_left + grey_right))//self.square_size[0]) - 1, ((self.height - (grey_up + grey_down))//self.square_size[1]) - 1)
         self.blocked = blocked  # A list of squares which are blocked by terrain, such that the player cannot walk on them. Don't add squares higher than the max coordinate >_> (waste of space)
         self.exits = exits # A list of tuples, showing squares which cause the player to exit the current room, and which area's they lead to.
-    
-       
+
     # Adding a square to the blocked list  
     def add_blocked(self, square):
         """Add a grid coordinate to the list of blocked squares for this room"""
@@ -964,7 +963,6 @@ class Room(object):
             if extra.placement == "above":
                 extra.display(self, player)
 
-    
     # Calculating the player's and canvas's position on the screen correctly (such that when the player is near the edge THEY move, not the canvas)
     def calculate_player_position(self, player):
         # Player's and canvas's x coordinates
@@ -1030,6 +1028,7 @@ class Room(object):
             elif self.y < -(self.height - screen_height):
                 player.y += -(self.height - screen_height) - self.y
                 self.y = -(self.height - screen_height)
+
     # Displaying NPCs on the canvas (and screen if their coordinates are on the screen)
     def display_npc(self, npc):
         npc.x = self.grey_left + self.square_size[0]*npc.position[0] + (self.square_size[0] - npc.width)//2 + self.x
@@ -1037,12 +1036,9 @@ class Room(object):
         npc.x = add_movement(self, npc, "x", "image")
         npc.y = add_movement(self, npc, "y", "image")
         session.screen.blit(npc.image, (npc.x,npc.y))
-
-### ---------- CLASS DEFINING - END ---------- ###
         
 
-### ---------- IMAGE IMPORTING - START ---------- ###
-
+# IMAGE IMPORTING ----------------------------------------------------------------------------------
 extra_images = {
     "sharedroom/lava_back_glow0":load("sharedroom/lava_back_glow0.png"),
     "sharedroom/lava_back_glow1":load("sharedroom/lava_back_glow1.png"),
@@ -1243,14 +1239,14 @@ esc_exit = load("esc_exit.png")
 controls_page = load("controls.png")
 
 
-### ---------- VIDEO IMPORTING - START ---------- ###
+# VIDEO IMPORTING ----------------------------------------------------------------------------------
 introduction = load("introduction.mpg")
 
 
-### ---------- PROGRAM DISPLAY - START ---------- ###
+# PROGRAM DISPLAY ----------------------------------------------------------------------------------
 
 current = "main menu"
-npcs = [] # A list of all currently loaded npcs. All Npc objects are appended to this list when they are initialised.
+npcs = []   # A list of all currently loaded npcs. All Npc objects are appended to this list when they are initialised.
 abilities = {}  # A dictionary of all currently loaded abilities
 loot = Loot()
 spells = [] # The characters unlocked spells
@@ -1419,7 +1415,6 @@ inferno.unlocked = True
 inferno.dead = True
 
 # Initialising screen/window related variables
-session.is_running = True
 frame = 1   # Storing the current frame as a variable
 
 # Program window while loop
@@ -1908,7 +1903,7 @@ while session.is_running:
                     if zaal_life <= 0:
                         cutscene_playing = True
                         cutscene_start_time = session.uptime
-                        pygame.mixer.mixer.stop()
+                        session.audio.stop()
                         current_room.extras.append(portal)
                         portal.x = 900
                         portal.y = 600
