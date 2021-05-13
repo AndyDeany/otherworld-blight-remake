@@ -138,17 +138,18 @@ def add_movement(self, character, axis, file_type):
     x_movement = (self.square_size[0] * character.movement_cooldown * character.movespeed) // (3 * session.fps)
     y_movement = (self.square_size[1] * character.movement_cooldown * character.movespeed) // (3 * session.fps)
     self_or_character = character if file_type == "image" else self
+    sign = 1 if file_type == "image" else -1
     if axis == "x":
         if character.orientation == "left":
-            return self_or_character.x + x_movement
+            return self_or_character.x + sign*x_movement
         if character.orientation == "right":
-            return self_or_character.x - x_movement
+            return self_or_character.x - sign*x_movement
         return self_or_character.x
     if axis == "y":
         if character.orientation == "up":
-            return self_or_character.y + y_movement
+            return self_or_character.y + sign*y_movement
         if character.orientation == "down":
-            return self_or_character.y - y_movement
+            return self_or_character.y - sign*y_movement
         return self_or_character.y
 
 
