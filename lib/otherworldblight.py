@@ -130,45 +130,21 @@ def is_longest_held(direction_held_time):
 
 # Corrects the player's coordinates if they are moving
 def add_movement(self, character, axis, file_type):
-    global error
-    if file_type == "image":
-        if axis == "x":
-            if character.orientation == "left":
-                return character.x + (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
-                            3 * session.fps)
-            elif character.orientation == "right":
-                return character.x - (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
-                            3 * session.fps)
-            else:
-                return character.x
-        elif axis == "y":
-            if character.orientation == "up":
-                return character.y + (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
-                            3 * session.fps)
-            elif character.orientation == "down":
-                return character.y - (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
-                            3 * session.fps)
-            else:
-                return character.y
-    elif file_type == "canvas":
-        if axis == "x":
-            if character.orientation == "left":
-                return self.x - (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
-                            3 * session.fps)
-            elif character.orientation == "right":
-                return self.x + (self.square_size[0] * character.movement_cooldown * character.movespeed) // (
-                            3 * session.fps)
-            else:
-                return self.x
-        elif axis == "y":
-            if character.orientation == "up":
-                return self.y - (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
-                            3 * session.fps)
-            elif character.orientation == "down":
-                return self.y + (self.square_size[1] * character.movement_cooldown * character.movespeed) // (
-                            3 * session.fps)
-            else:
-                return self.y
+    x_movement = (self.square_size[0] * character.movement_cooldown * character.movespeed) // (3 * session.fps)
+    y_movement = (self.square_size[1] * character.movement_cooldown * character.movespeed) // (3 * session.fps)
+    self_or_character = character if file_type == "image" else self
+    if axis == "x":
+        if character.orientation == "left":
+            return self_or_character.x + x_movement
+        if character.orientation == "right":
+            return self_or_character.x - x_movement
+        return self_or_character.x
+    if axis == "y":
+        if character.orientation == "up":
+            return self_or_character.y + y_movement
+        if character.orientation == "down":
+            return self_or_character.y - y_movement
+        return self_or_character.y
 
 
 # Defining a function that transforms Vincent
@@ -216,8 +192,7 @@ def number_drop(number_type, character, value):
     elif number_type == "heal":
         colour = (43, 255, 0)
     else:
-        error = "Invalid value for number_type: " + str(number_type)
-        raise
+        raise ValueError(f"Invalid number_type '{number_type}'.")
 
     if value > 0:
         if number_type == "damage":
@@ -878,8 +853,7 @@ class Extra(object):
                     if abs(self.y - self.original_y) >= self.height:
                         self.y = self.original_y
                 else:
-                    error = "Invalid scroll axis: " + str(self.scroll_axis) + " [coding syntax error]"
-                    raise
+                    raise ValueError(f"Invalid scroll axis '{self.scroll_axis}'.")
 
             if self.rotations > 1:  # Changing the image at the correct time for images that rotate
                 if frame % int(self.rotation_interval*session.fps) == 0:
@@ -949,25 +923,19 @@ class Room(object):
     def add_blocked(self, square):
         """Add a grid coordinate to the list of blocked squares for this room"""
         if square in self.blocked:
-            error = "square already blocked"
-            raise
-        elif square[0] < 0 or square[1] < 0 or square[0] > self.max_coord[0] or square[1] > self.max_coord[1]:
-            error = "square not in coordinate range of current room (" + self.name + ")"
-            raise
-        else:
-            self.blocked.append(square)
+            raise ValueError(f"Square '{square}' is already blocked.")
+        if not (0 <= square[0] <= self.max_coord[0] and 0 <= square[1] <= self.max_coord[1]):
+            raise ValueError(f"Square '{square}' not in coordinate range of current room ({self.name})")
+        self.blocked.append(square)
     
     # Removing a square from the blocked list
     def remove_blocked(self, square):
         """Remove a grid coordinate from the list of blocked squares for this room"""
-        if not square in self.blocked:
-            error = "square not currently blocked"
-            raise
-        elif square[0] < 0 or square[1] < 0 or square[0] > self.max_coord[0] or square[1] > self.max_coord[1]:
-            error = "square not in coordinate range of current room (" + self.name + ")"
-            raise
-        else:
-            self.blocked.remove(square)
+        if square not in self.blocked:
+            raise ValueError(f"Square '{square}' is not currently blocked.")
+        if not (0 <= square[0] <= self.max_coord[0] and 0 <= square[1] <= self.max_coord[1]):
+            raise ValueError(f"Square '{square}' not in coordinate range of current room ({self.name})")
+        self.blocked.remove(square)
             
     # Displaying everything in the room
     def display_room(self, player):
@@ -1449,7 +1417,7 @@ inferno.dead = True
 session.is_running = True
 frame = 1   # Storing the current frame as a variable
 
-## Program window while loop
+# Program window while loop
 while session.is_running:
     session.uptime = time.time() - session.start_time
 
