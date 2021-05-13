@@ -2,6 +2,7 @@ import time
 
 import pygame
 
+from lib.game import Game
 from lib.base import Base
 from lib.keys import Keys
 from lib.mouse import Mouse
@@ -25,6 +26,8 @@ class Session:
         self.mouse = Mouse()
         self.keys = Keys()
         self.audio = AudioController()
+
+        self.game = Game(self)
 
         Base.initialise(self)
         Surface.initialise(self)
