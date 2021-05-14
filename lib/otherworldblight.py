@@ -680,7 +680,7 @@ class Ability(Character):
                 self.room = player.room
                 player.current_ability = self.name.lower()            
                 self.cooldown = session.fps*self.max_cooldown
-        elif self.dead and zaal_animation == -1 and player.position in [(x,y) for y in range(4, 15) for x in range(10, 13)]+[(x,y) for y in range(2, 4) for x in range(10)]+[(x,y) for y in range(2) for x in range(10, 13)]+[(x,y) for y in range(2, 4) for x in range(13, 20)]:
+        elif self.dead and zaal_animation == -1 and player.position in [(x, y) for y in range(4, 15) for x in range(10, 13)]+[(x, y) for y in range(2, 4) for x in range(10)]+[(x, y) for y in range(2) for x in range(10, 13)]+[(x, y) for y in range(2, 4) for x in range(13, 20)]:
             zaal_animation = 18
             session.audio.sound.play(AudioClip("zaalattack.ogg", 0.2))
     
@@ -706,16 +706,16 @@ class Ability(Character):
             self.room = player.room
             self.cooldown = session.fps*self.max_cooldown
             zaal_animation = -1
-            if player.position in [(x,y) for y in range(4, 15) for x in range(10, 13)]:
+            if player.position in [(x, y) for y in range(4, 15) for x in range(10, 13)]:
                 self.position = Coordinates(player.position.x, 5)
                 self.moves = ["down" for distance in range(self.max_range)]
-            elif player.position in [(x,y) for y in range(2, 4) for x in range(10)]:
+            elif player.position in [(x, y) for y in range(2, 4) for x in range(10)]:
                 self.position = Coordinates(9, player.position.y)
                 self.moves = ["left" for distance in range(self.max_range)]
-            elif player.position in [(x,y) for y in range(2) for x in range(10, 13)]:
+            elif player.position in [(x, y) for y in range(2) for x in range(10, 13)]:
                 self.position = Coordinates(player.position.x, 1)
                 self.moves = ["up" for distance in range(self.max_range)]
-            elif player.position in [(x,y) for y in range(2, 4) for x in range(13, 20)]:
+            elif player.position in [(x, y) for y in range(2, 4) for x in range(13, 20)]:
                 self.position = Coordinates(13, player.position.y)
                 self.moves = ["right" for distance in range(self.max_range)]
             else:
@@ -1312,14 +1312,14 @@ rooms = [
          + [(86, 5), (30, 7), (30, 8), (60, 7), (60, 8)]
          + [(x, 9) for x in range(31, 45)]
          + [(x, 9) for x in range(48, 60)]
-         + [(16,y) for y in range(6, 13)]
-         + [(44,y) for y in range(10, 15)]
-         + [(48,y) for y in range(10, 15)]
-         + [(90,y) for y in range(10, 19)]
+         + [(16, y) for y in range(6, 13)]
+         + [(44, y) for y in range(10, 15)]
+         + [(48, y) for y in range(10, 15)]
+         + [(90, y) for y in range(10, 19)]
          + [(x, 13) for x in range(5)]
          + [(x, 13) for x in range(8, 16)]
          + [(4, 14), (3, 15), (3, 16), (3, 17), (2, 17)]
-         + [(15,y) for y in range(14, 19)]
+         + [(15, y) for y in range(14, 19)]
          + [(x, 18) for x in range(16, 22)]
          + [(x, 19) for x in range(22, 35)]
          + [(x, 19) for x in range(91, 104)]
@@ -1327,12 +1327,12 @@ rooms = [
             (105, 20), (105, 21), (105, 22), (104, 22),
             (100, 20), (100, 21), (99, 21), (98, 21),
             (97, 22), (97, 23), (97, 24)]
-         + [(96,y) for y in range(25, 33)]
+         + [(96, y) for y in range(25, 33)]
          + [(x, 30) for x in range(12)]
          + [(x, 30) for x in range(13, 28)]
          + [(14, 31), (13, 32), (25, 31), (25, 32)]
-         + [(35,y) for y in range(16, 33)]
-         + [(57,y) for y in range(16, 33)]
+         + [(35, y) for y in range(16, 33)]
+         + [(57, y) for y in range(16, 33)]
          + [(x, 15) for x in range(36, 45)]
          + [(x, 15) for x in range(48, 57)],
          [Exit(Coordinates(45, 33), "down", 1, Coordinates(11, 0)),
@@ -1344,7 +1344,7 @@ rooms = [
           Extra("room3/platform", "below", 0, 0)],
          (70, 70), 280, 140, 200, 210,
          [(x, 0) for x in range(6)]
-         + [(20,y) for y in range(6, 10)]
+         + [(20, y) for y in range(6, 10)]
          + [(x, 10) for x in range(16, 20)],
          [])
     ]
