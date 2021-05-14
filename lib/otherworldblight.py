@@ -1,7 +1,5 @@
 import os
-import datetime
 import random
-import ctypes
 from operator import attrgetter
 
 import pygame
@@ -18,29 +16,13 @@ screen = pygame.display.set_mode((1920, 1080), pygame.HWSURFACE | pygame.DOUBLEB
 from lib.base import Base
 from lib.session import Session
 from lib.audio import AudioClip
+from lib.surfaces import Image
 
 from lib.loot import Loot
 from lib.coordinates import Coordinates
 
 
-# Defining the load function for loading other files
-def load(file_name):
-    length = len(file_name)
-    for index in range(length):
-        if file_name[length-index-1] == ".":
-            file_type = file_name[length-index:length]
-            break
-    else:
-        raise ValueError(f"Cannot determine file type of {file_name}.")
-
-    if file_type == "png":
-        return pygame.image.load("../images/" + file_name).convert_alpha()
-    else:
-        raise Exception("Invalid file type")
-
-
 # VARIABLE ASSIGNMENT ------------------------------------------------------------------------------
-
 # Assigning essential game variables
 session = Session(screen)
 show_hud = False
@@ -161,51 +143,46 @@ def number_drop(number_type, character, value):
 def display_number_drop(number_drop_item):
     global number_drops
     session.screen.blit(dropfont.render(number_drop_item[3], True, number_drop_item[2]),
-                (number_drop_item[0], number_drop_item[1]))
+                        (number_drop_item[0], number_drop_item[1]))
     return number_drop_item[1] - 3
 
 
 # Defining a function that displays the spellbook
 def display_spellbook():
     if not cutscene6_played:
-        session.screen.blit(spellbook_images["spellbook_default"], (0, 0))
+        spellbook_images["spellbook_default"].display(0, 0)
     else:
-        session.screen.blit(spellbook_images["firebolt1"], (0, 0))
-    session.screen.blit(spellbook_images["firebolt_uncharged"], (0, 0))
+        spellbook_images["firebolt1"].display(0, 0)
+    spellbook_images["firebolt_uncharged"].display(0, 0)
     session.screen.blit(font.render(str(vincent.level), True, (199, 189, 189)), (610, 20))
     session.screen.blit(font.render(str(vincent.skill_points), True, (199, 189, 189)), (1665, 20))
     session.screen.blit(font.render(str(firebolt.level), True, (142, 0, 0)), (834, 239))
-    session.screen.blit(esc_exit, (0, 0))
+    esc_exit.display(0, 0)
 
 
 # Defining a function that displays the Heads-up Display (HUD)
 def display_hud():
-    session.screen.blit(hud_images["expback"], (0, 0))
-    session.screen.blit(hud_images["expbar"], (728, 951), (0, 0, (vincent.exp / 100.0) * 467, 130))
-    session.screen.blit(hud_images["hud"], (0, 0))
-    session.screen.blit(hud_images["health_orb"],
-                (1025, 994 + (1 - (vincent.current_life / float(vincent.max_life))) * 87), (
-                0, (1 - (vincent.current_life / float(vincent.max_life))) * 87, 123,
-                (vincent.current_life / float(vincent.max_life)) * 87))
+    hud_images["expback"].display(0, 0)
+    hud_images["expbar"].display(728, 951, area=(0, 0, (vincent.exp / 100.0) * 467, 130))
+    hud_images["hud"].display(0, 0)
+    hud_images["health_orb"].display(1025, 994 + (1 - (vincent.current_life/vincent.max_life)) * 87,
+                                     area=(0, (1 - (vincent.current_life/vincent.max_life)) * 87,
+                                           123, (vincent.current_life / vincent.max_life) * 87))
 
-    for index in range(len(spells)):
-        if abilities[spells[index]].cooldown > 0:
-            session.screen.blit(hud_images[spells[index] + "_cooldown"], (760 + 51 * index, 1029))
-        else:
-            session.screen.blit(hud_images[spells[index]], (760 + 51 * index, 1029))
+    for index, spell in enumerate(spells):
+        if abilities[spell].cooldown > 0:
+            spell += "_cooldown"
+        hud_images[spell].display(760 + 51 * index, 1029)
 
-    for index in range(len(inventory)):
-        session.screen.blit(hud_images[inventory[index]], (964 + 51 * index, 1029))
+    for index, item in enumerate(inventory):
+        hud_images[item].display(964 + 51 * index, 1029)
 
 
 # Defining a function that displays dialogue boxes with the respective text
 def display_dialogue(character, dialogue_number):
-    session.screen.blit(dialogue[character + "box"], (0, 0))
-    session.screen.blit(dialogue[character + str(dialogue_number)], (765, 895))
-    if session.keys.space or session.keys.enter or session.keys.numpad_enter:
-        return False
-    return True
-
+    dialogue[character + "box"].display(0, 0)
+    dialogue[character + str(dialogue_number)].display(765, 895)
+    return not (session.keys.space or session.keys.enter or session.keys.numpad_enter)
 
 # Defining a function to load a save file
 def load_game(savefile):
@@ -294,8 +271,8 @@ def deletesave(savefile):
 class Menu:
     def __init__(self, name, permanent, options, coordinates, actions, escape_action, settings=None):
         self.name = name
-        self.background = load("menus/" + self.name + "/background.png")
-        self.permanent = [load("menus/" + self.name + "/" + item + ".png") for item in permanent] # A list of all the different thing in the menu that are always shown
+        self.background = Image("menus/" + self.name + "/background.png")
+        self.permanent = [Image("menus/" + self.name + "/" + item + ".png") for item in permanent] # A list of all the different thing in the menu that are always shown
         self.sliders = []   # A list showing which settings in the menu are sliders        
         self.original_x = 0 # shows where the mouse was orignially pressed when moving a slider
         for option in options:
@@ -303,7 +280,7 @@ class Menu:
                 self.sliders.append([True, int(option[0][6:])])
             else:
                 self.sliders.append([False])
-        self.options = [[load("menus/" + self.name + "/" + setting + ".png") for setting in option] for option in options] # A list of all the different options that the user can select in the menu
+        self.options = [[Image("menus/" + self.name + "/" + setting + ".png") for setting in option] for option in options] # A list of all the different options that the user can select in the menu
         self.settings = settings    # Shows which setting each option is currently on
         if self.settings is None:
             self.settings = [0 for option in range(len(options))]
@@ -314,20 +291,20 @@ class Menu:
     
     # Displays the menu on the screen
     def display(self):
-        session.screen.blit(self.background, (0, 0))
+        self.background.display(0, 0)
         for item in self.permanent:
-            session.screen.blit(item, (0, 0))
+            item.display(0, 0)
 
         for option in range(len(self.options)):
             if self.sliders[option][0]:
-                session.screen.blit(self.options[option][0], ((960 + 4*self.settings[option])*(screen_width/1920.0), self.sliders[option][1]*(screen_height/1080.0)))
+                self.options[option][0].display((960 + 4*self.settings[option])*(screen_width/1920.0), self.sliders[option][1]*(screen_height/1080.0))
 
         if not self.sliders[self.current_selection][0]:
-            session.screen.blit(self.options[self.current_selection][self.settings[self.current_selection]], (0, 0))
+            self.options[self.current_selection][self.settings[self.current_selection]].display(0, 0)
 
         for index in range(len(self.options)):
             if len(self.options[index]) > 1:
-                session.screen.blit(self.options[index][self.settings[index]], (0, 0))
+                self.options[index][self.settings[index]].display(0, 0)
         
     # Changes the user's current selection in the menu
     def change_selection(self):
@@ -394,7 +371,7 @@ class Character(Base):    # maybe add an "id" attribute. One to identify each ob
         self.name = name    # Character's name
         self.x = 0  # Character's screen x coordinate
         self.y = 0  # Character's screen y coordinate
-        self.frames = {frame: {direction: load(self.name.lower().replace(" ", "/") + "/" + direction + str(frame) + ".png") for direction in ["left","up","right","down"]} for frame in range(frames)} #frames # The number of frames in the character's movement animation. The attribute "frames" becomes a dictionary of all the images during initialisation.
+        self.frames = {frame: {direction: Image(self.name.lower().replace(" ", "/") + "/" + direction + str(frame) + ".png") for direction in ["left","up","right","down"]} for frame in range(frames)} #frames # The number of frames in the character's movement animation. The attribute "frames" becomes a dictionary of all the images during initialisation.
         self.position = position    # Character's grid position
         self.orientation = orientation  # The direction in which the character is facing
         self.movespeed = movespeed  # Character's movement speed. Should divide 3*session.fps (currently 90). Definitely should NOT be 90 or even near it. Also the 3*session.fps value may need changing.
@@ -402,8 +379,8 @@ class Character(Base):    # maybe add an "id" attribute. One to identify each ob
         self.current_ability = ""   # The ability the character is currently using
         self.ability_frame = 0  # The frame of the ability animation the character is currently playing
         self.image = self.select_image()  # Character's image file        
-        self.width = self.image.get_width()      # Width of character's image in pixels
-        self.height = self.image.get_height()    # Height of character's image in pixels
+        self.width = self.image.width      # Width of character's image in pixels
+        self.height = self.image.height    # Height of character's image in pixels
         self.room = room  # Character's room
         self.exp = exp      # Friendly character's current experience/enemy character's experience given
         self.level = 1
@@ -454,12 +431,11 @@ class Character(Base):    # maybe add an "id" attribute. One to identify each ob
         if self.current_life <= 0:
             self.alive = False
     
-    def die(self, kill=False, directional=False):
+    def die(self, kill=False):
         if not self.alive and not self.dead:
-            if not directional:
-                self.image = death_images[self.name][self.death_frame]
-            else:
-                self.image = death_images[self.name][self.death_frame][self.orientation]
+            self.image = death_images[self.name][self.death_frame]
+            if not isinstance(self.image, Image):
+                self.image = self.image[self.orientation]
                 
             self.death_frame += 1
             if self.death_frame == len(death_images[self.name]):
@@ -502,7 +478,7 @@ class Player(Character):
     def __init__(self, name, frames, position, orientation, movespeed, room, exp, max_life, current_life):
         self.form = "human"
         super().__init__(name, frames, position, orientation, movespeed, room, exp, max_life, current_life)
-        self._slime_frames = {frame: {direction: load(f"vincent/slime/{direction}{frame}.png")
+        self._slime_frames = {frame: {direction: Image(f"vincent/slime/{direction}{frame}.png")
                                       for direction in ("left", "up", "right", "down")}
                               for frame in range(6)}
 
@@ -526,8 +502,8 @@ class Player(Character):
             self.frames = self._human_frames
             self.movespeed = 15
         self.image = self.select_image()
-        self.width = self.image.get_width()
-        self.height = self.image.get_height()
+        self.width = self.image.width
+        self.height = self.image.height
 
     # Changing the direction in which the player is facing. This is useful for directing the player's abilities
     def change_orientation(self):
@@ -752,7 +728,7 @@ class Ability(Character):
     def exist(self, room):
         if self.cooldown > 0:
             self.cooldown -= 1
-        self.die(directional=True)
+        self.die()
         self.change_position(room)
         self.change_image()
         self.check_display()
@@ -796,8 +772,8 @@ class Extra(object):
             self.image = extra_images[image_name[9:]]
         else:
             self.image = extra_images[image_name]
-        self.width = self.image.get_width()
-        self.height = self.image.get_height()
+        self.width = self.image.width
+        self.height = self.image.height
         self.placement = placement  # Whether the extra is shown below or above the characters
         self.x = x*(screen_width/1920.0)  # The image's x displacement from the canvas in pixels
         self.y = y*(screen_height/1080.0)  # The image's y displacement from the canvas in pixels
@@ -855,21 +831,21 @@ class Extra(object):
             if self.image_name[0:9] == "TESSELATE":
                 for horizontal in range(-1,(room.width//self.width) + 1):
                     for vertical in range(-1,(room.height//self.height) + 1):
-                        session.screen.blit(self.image, (room.x + self.x + horizontal*self.width, room.y + self.y + vertical*self.height))
+                        self.image.display(room.x + self.x + horizontal*self.width, room.y + self.y + vertical*self.height)
             else:
-                session.screen.blit(self.image, (room.x + self.x, room.y + self.y))
+                self.image.display(room.x + self.x, room.y + self.y)
 
             if self.scroll_speed != 0:   # Showing an extra copy of the image file for smooth scrolling
                 if self.scroll_speed > 0:
                     if self.scroll_axis == "x":
-                        session.screen.blit(self.image, (room.x + self.x - room.width, room.y + self.y))
+                        self.image.display(room.x + self.x - room.width, room.y + self.y)
                     elif self.scroll_axis == "y":
-                        session.screen.blit(self.image, (room.x + self.x, room.y + self.y - room.height))
+                        self.image.display(room.x + self.x, room.y + self.y - room.height)
                 else:   # When the scroll speed is negative
                     if self.scroll_axis == "x":
-                        session.screen.blit(self.image, (room.x + self.x + room.width, room.y + self.y))
+                        self.image.display(room.x + self.x + room.width, room.y + self.y)
                     elif self.scroll_axis == "y":
-                        session.screen.blit(self.image, (room.x + self.x, room.y + self.y + room.height))
+                        self.image.display(room.x + self.x, room.y + self.y + room.height)
             
             
 class Exit(object):
@@ -888,8 +864,8 @@ class Room(object):
         self.extras = extras    # A list of extra things that will be shown on top of characters in the room
         self.x = 0  # Canvas's screen x coordinate
         self.y = 0  # Canvas's screen y coordinate
-        self.width = canvas.get_width()
-        self.height = canvas.get_height()
+        self.width = canvas.width
+        self.height = canvas.height
         self.square_size = square_size      # this NEEDS to be a multiple/division of the screen size, so that zoom room is maintained across all resolutions
         # The amounts of inaccessible terrain at each side of the canvas
         self.grey_left = grey_left
@@ -919,7 +895,7 @@ class Room(object):
     def display_room(self, player):
         """Display everything that will be on screen for the room"""
         self.calculate_player_position(player)  # Calculating the player's and canvas's x and y coordinates on the screen
-        session.screen.blit(self.canvas, (self.x,self.y))   # Blitting the canvas first, so everything else goes on top of it
+        self.canvas.display(self.x, self.y)   # Blitting the canvas first, so everything else goes on top of it
 
         for extra in self.extras:   # Showing the extras that go below the characters
             if extra.placement == "below":
@@ -928,7 +904,7 @@ class Room(object):
         for npc in npcs:    # Displaying all the npcs. This may require an order for bosses. Maybe the npcs list should be sorted by a "(display_)priority" attribute?
             if npc.room == self.number and not npc.dead:   # Only displaying npcs that are in the current room
                 self.display_npc(npc)
-        session.screen.blit(player.image, (player.x,player.y))  # Displaying the player last, so they are always on top
+        player.image.display(player.x, player.y)  # Displaying the player last, so they are always on top
         for name, ability in abilities.items():
             if ability.room == self.number and ability.displayed:
                 self.display_npc(ability)
@@ -1009,205 +985,205 @@ class Room(object):
         npc.y = self.grey_up + self.square_size[1]*(npc.position.y - 1) + (2*self.square_size[1] - npc.height) + self.y
         npc.x = add_movement(self, npc, "x", "image")
         npc.y = add_movement(self, npc, "y", "image")
-        session.screen.blit(npc.image, (npc.x,npc.y))
+        npc.image.display(npc.x, npc.y)
         
 
 # IMAGE IMPORTING ----------------------------------------------------------------------------------
 extra_images = {
-    "sharedroom/lava_back_glow0": load("sharedroom/lava_back_glow0.png"),
-    "sharedroom/lava_back_glow1": load("sharedroom/lava_back_glow1.png"),
-    "sharedroom/lava_back_glow2": load("sharedroom/lava_back_glow2.png"),
-    "sharedroom/lava_back_glow3": load("sharedroom/lava_back_glow3.png"),
-    "sharedroom/lava_back_glow4": load("sharedroom/lava_back_glow4.png"),
-    "sharedroom/black_patches0": load("sharedroom/black_patches0.png"),
-    "sharedroom/black_patches1": load("sharedroom/black_patches1.png"),
+    "sharedroom/lava_back_glow0": Image("sharedroom/lava_back_glow0.png"),
+    "sharedroom/lava_back_glow1": Image("sharedroom/lava_back_glow1.png"),
+    "sharedroom/lava_back_glow2": Image("sharedroom/lava_back_glow2.png"),
+    "sharedroom/lava_back_glow3": Image("sharedroom/lava_back_glow3.png"),
+    "sharedroom/lava_back_glow4": Image("sharedroom/lava_back_glow4.png"),
+    "sharedroom/black_patches0": Image("sharedroom/black_patches0.png"),
+    "sharedroom/black_patches1": Image("sharedroom/black_patches1.png"),
     # Room 0
-    "room0/black_patches0": load("room0/black_patches0.png"),
-    "room0/black_patches1": load("room0/black_patches1.png"),
-    "room0/back": load("room0/back.png"),
-    "room0/front": load("room0/front.png"),
-    "room0/portal0": load("room0/portal0.png"),
-    "room0/portal1": load("room0/portal1.png"),
-    "room0/portal2": load("room0/portal2.png"),
-    "room0/portal3": load("room0/portal3.png"),
-    "room0/portal4": load("room0/portal4.png"),
-    "room0/portal5": load("room0/portal5.png"),
-    "room0/portal6": load("room0/portal6.png"),
-    "room0/portal7": load("room0/portal7.png"),
-    "room0/portal8": load("room0/portal8.png"),
-    "room0/portal9": load("room0/portal9.png"),
+    "room0/black_patches0": Image("room0/black_patches0.png"),
+    "room0/black_patches1": Image("room0/black_patches1.png"),
+    "room0/back": Image("room0/back.png"),
+    "room0/front": Image("room0/front.png"),
+    "room0/portal0": Image("room0/portal0.png"),
+    "room0/portal1": Image("room0/portal1.png"),
+    "room0/portal2": Image("room0/portal2.png"),
+    "room0/portal3": Image("room0/portal3.png"),
+    "room0/portal4": Image("room0/portal4.png"),
+    "room0/portal5": Image("room0/portal5.png"),
+    "room0/portal6": Image("room0/portal6.png"),
+    "room0/portal7": Image("room0/portal7.png"),
+    "room0/portal8": Image("room0/portal8.png"),
+    "room0/portal9": Image("room0/portal9.png"),
     # Room 1
-    "room1/barrier": load("room1/barrier.png"),
-    "room1/bottom": load("room1/bottom.png"),
-    "room1/bottom80": load("room1/bottom80.png"),
-    "room1/sides": load("room1/sides.png"),
-    "room1/star0": load("room1/star0.png"),
-    "room1/star1": load("room1/star1.png"),
-    "room1/star2": load("room1/star2.png"),
-    "room1/star3": load("room1/star3.png"),
-    "room1/star4": load("room1/star4.png"),
-    "room1/star5": load("room1/star5.png"),
-    "room1/star6": load("room1/star6.png"),
-    "room1/star7": load("room1/star7.png"),
-    "room1/star8": load("room1/star8.png"),
-    "room1/flux00": load("room1/flux00.png"),
-    "room1/flux01": load("room1/flux01.png"),
-    "room1/flux02": load("room1/flux02.png"),
-    "room1/flux03": load("room1/flux03.png"),
-    "room1/flux04": load("room1/flux04.png"),
-    "room1/flux05": load("room1/flux05.png"),
-    "room1/flux06": load("room1/flux06.png"),
-    "room1/flux07": load("room1/flux07.png"),
-    "room1/flux08": load("room1/flux08.png"),
-    "room1/flux09": load("room1/flux09.png"),
-    "room1/flux10": load("room1/flux10.png"),
-    "room1/flux11": load("room1/flux11.png"),
-    "room1/flux12": load("room1/flux12.png"),
+    "room1/barrier": Image("room1/barrier.png"),
+    "room1/bottom": Image("room1/bottom.png"),
+    "room1/bottom80": Image("room1/bottom80.png"),
+    "room1/sides": Image("room1/sides.png"),
+    "room1/star0": Image("room1/star0.png"),
+    "room1/star1": Image("room1/star1.png"),
+    "room1/star2": Image("room1/star2.png"),
+    "room1/star3": Image("room1/star3.png"),
+    "room1/star4": Image("room1/star4.png"),
+    "room1/star5": Image("room1/star5.png"),
+    "room1/star6": Image("room1/star6.png"),
+    "room1/star7": Image("room1/star7.png"),
+    "room1/star8": Image("room1/star8.png"),
+    "room1/flux00": Image("room1/flux00.png"),
+    "room1/flux01": Image("room1/flux01.png"),
+    "room1/flux02": Image("room1/flux02.png"),
+    "room1/flux03": Image("room1/flux03.png"),
+    "room1/flux04": Image("room1/flux04.png"),
+    "room1/flux05": Image("room1/flux05.png"),
+    "room1/flux06": Image("room1/flux06.png"),
+    "room1/flux07": Image("room1/flux07.png"),
+    "room1/flux08": Image("room1/flux08.png"),
+    "room1/flux09": Image("room1/flux09.png"),
+    "room1/flux10": Image("room1/flux10.png"),
+    "room1/flux11": Image("room1/flux11.png"),
+    "room1/flux12": Image("room1/flux12.png"),
     # Room 2
-    "room2/back": load("room2/back.png"),
-    "room2/barriers": load("room2/barriers.png"),
-    "room2/left_bottom_front1": load("room2/left_bottom_front1.png"),
-    "room2/left_bottom_front180": load("room2/left_bottom_front180.png"),
-    "room2/left_bottom_front2": load("room2/left_bottom_front2.png"),
-    "room2/left_bottom_front280": load("room2/left_bottom_front280.png"),
-    "room2/left_front1": load("room2/left_front1.png"),
-    "room2/left_front180": load("room2/left_front180.png"),
-    "room2/left_front2": load("room2/left_front2.png"),
-    "room2/left_front280": load("room2/left_front280.png"),
-    "room2/middle_front1": load("room2/middle_front1.png"),
-    "room2/middle_front180": load("room2/middle_front180.png"),
-    "room2/middle_front2": load("room2/middle_front2.png"),
-    "room2/middle_front280": load("room2/middle_front280.png"),
-    "room2/right_bottom_front": load("room2/right_bottom_front.png"),
-    "room2/right_bottom_front80": load("room2/right_bottom_front80.png"),
-    "room2/right_front": load("room2/right_front.png"),
-    "room2/right_front80": load("room2/right_front80.png"),
-    "room2/small_front1": load("room2/small_front1.png"),
-    "room2/small_front2": load("room2/small_front2.png"),
-    "room2/ruin": load("room2/ruin.png"),
-    "room2/farleft_sidewall": load("room2/farleft_sidewall.png"),
-    "room2/left_sidewall": load("room2/left_sidewall.png"),
-    "room2/middle_sidewall1": load("room2/middle_sidewall1.png"),
-    "room2/middle_sidewall2": load("room2/middle_sidewall2.png"),
-    "room2/right_sidewall": load("room2/right_sidewall.png"),
-    "room2/bottom_wall": load("room2/bottom_wall.png"),
-    "room2/bottom_wall80": load("room2/bottom_wall80.png"),
-    "room2/portal_burn": load("room2/portal_burn.png"),
-    "room2/portal_symbol": load("room2/portal_symbol.png"),
-    "room2/portal_symbol_slime": load("room2/portal_symbol_slime.png"),
-    "room2/book0": load("room2/book0.png"),
-    "room2/book1": load("room2/book1.png"),
-    "room2/book2": load("room2/book2.png"),
-    "room2/light00": load("room2/light00.png"),
-    "room2/light01": load("room2/light01.png"),
-    "room2/light02": load("room2/light02.png"),
-    "room2/light03": load("room2/light03.png"),
-    "room2/light04": load("room2/light04.png"),
-    "room2/light05": load("room2/light05.png"),
-    "room2/light06": load("room2/light06.png"),
-    "room2/light07": load("room2/light07.png"),
-    "room2/light08": load("room2/light08.png"),
-    "room2/light09": load("room2/light09.png"),
-    "room2/light10": load("room2/light10.png"),
-    "room2/light11": load("room2/light11.png"),
-    "room2/light12": load("room2/light12.png"),
-    "room2/light13": load("room2/light13.png"),
-    "room2/light14": load("room2/light14.png"),
-    "room2/light15": load("room2/light15.png"),
-    "room2/drop0": load("room2/drop0.png"),
-    "room2/drop1": load("room2/drop1.png"),
-    "room2/drop2": load("room2/drop2.png"),
-    "room2/drop3": load("room2/drop3.png"),
-    "room2/drop4": load("room2/drop4.png"),
-    "room2/drop5": load("room2/drop5.png"),
-    "room2/drop6": load("room2/drop6.png"),
+    "room2/back": Image("room2/back.png"),
+    "room2/barriers": Image("room2/barriers.png"),
+    "room2/left_bottom_front1": Image("room2/left_bottom_front1.png"),
+    "room2/left_bottom_front180": Image("room2/left_bottom_front180.png"),
+    "room2/left_bottom_front2": Image("room2/left_bottom_front2.png"),
+    "room2/left_bottom_front280": Image("room2/left_bottom_front280.png"),
+    "room2/left_front1": Image("room2/left_front1.png"),
+    "room2/left_front180": Image("room2/left_front180.png"),
+    "room2/left_front2": Image("room2/left_front2.png"),
+    "room2/left_front280": Image("room2/left_front280.png"),
+    "room2/middle_front1": Image("room2/middle_front1.png"),
+    "room2/middle_front180": Image("room2/middle_front180.png"),
+    "room2/middle_front2": Image("room2/middle_front2.png"),
+    "room2/middle_front280": Image("room2/middle_front280.png"),
+    "room2/right_bottom_front": Image("room2/right_bottom_front.png"),
+    "room2/right_bottom_front80": Image("room2/right_bottom_front80.png"),
+    "room2/right_front": Image("room2/right_front.png"),
+    "room2/right_front80": Image("room2/right_front80.png"),
+    "room2/small_front1": Image("room2/small_front1.png"),
+    "room2/small_front2": Image("room2/small_front2.png"),
+    "room2/ruin": Image("room2/ruin.png"),
+    "room2/farleft_sidewall": Image("room2/farleft_sidewall.png"),
+    "room2/left_sidewall": Image("room2/left_sidewall.png"),
+    "room2/middle_sidewall1": Image("room2/middle_sidewall1.png"),
+    "room2/middle_sidewall2": Image("room2/middle_sidewall2.png"),
+    "room2/right_sidewall": Image("room2/right_sidewall.png"),
+    "room2/bottom_wall": Image("room2/bottom_wall.png"),
+    "room2/bottom_wall80": Image("room2/bottom_wall80.png"),
+    "room2/portal_burn": Image("room2/portal_burn.png"),
+    "room2/portal_symbol": Image("room2/portal_symbol.png"),
+    "room2/portal_symbol_slime": Image("room2/portal_symbol_slime.png"),
+    "room2/book0": Image("room2/book0.png"),
+    "room2/book1": Image("room2/book1.png"),
+    "room2/book2": Image("room2/book2.png"),
+    "room2/light00": Image("room2/light00.png"),
+    "room2/light01": Image("room2/light01.png"),
+    "room2/light02": Image("room2/light02.png"),
+    "room2/light03": Image("room2/light03.png"),
+    "room2/light04": Image("room2/light04.png"),
+    "room2/light05": Image("room2/light05.png"),
+    "room2/light06": Image("room2/light06.png"),
+    "room2/light07": Image("room2/light07.png"),
+    "room2/light08": Image("room2/light08.png"),
+    "room2/light09": Image("room2/light09.png"),
+    "room2/light10": Image("room2/light10.png"),
+    "room2/light11": Image("room2/light11.png"),
+    "room2/light12": Image("room2/light12.png"),
+    "room2/light13": Image("room2/light13.png"),
+    "room2/light14": Image("room2/light14.png"),
+    "room2/light15": Image("room2/light15.png"),
+    "room2/drop0": Image("room2/drop0.png"),
+    "room2/drop1": Image("room2/drop1.png"),
+    "room2/drop2": Image("room2/drop2.png"),
+    "room2/drop3": Image("room2/drop3.png"),
+    "room2/drop4": Image("room2/drop4.png"),
+    "room2/drop5": Image("room2/drop5.png"),
+    "room2/drop6": Image("room2/drop6.png"),
     # Room 3
-    "room3/platform": load("room3/platform.png")
+    "room3/platform": Image("room3/platform.png")
 }
 
 # Loading dialogue images
 dialogue = {
-    "mysteriousbox": load("dialogue/mysteriousbox.png"),
-    "vincentbox": load("dialogue/vincentbox.png"),
-    "zaalbox": load("dialogue/zaalbox.png"),
-    "mysterious0": load("dialogue/mysterious0.png"),
-    "mysterious1": load("dialogue/mysterious1.png"),
-    "mysterious2": load("dialogue/mysterious2.png"),
-    "mysterious3": load("dialogue/mysterious3.png"),
-    "vincent0": load("dialogue/vincent0.png"),
-    "vincent1": load("dialogue/vincent1.png"),
-    "vincent2": load("dialogue/vincent2.png"),
-    "vincent3": load("dialogue/vincent3.png"),
-    "vincent4": load("dialogue/vincent4.png"),
-    "vincent5": load("dialogue/vincent5.png"),
-    "vincent6": load("dialogue/vincent6.png"),
-    "vincent7": load("dialogue/vincent7.png"),
-    "vincent8": load("dialogue/vincent8.png"),
-    "zaal0": load("dialogue/zaal0.png"),
-    "zaal1": load("dialogue/zaal1.png"),
-    "zaal2": load("dialogue/zaal2.png"),
-    "zaal3": load("dialogue/zaal3.png"),
-    "zaal4": load("dialogue/zaal4.png"),
+    "mysteriousbox": Image("dialogue/mysteriousbox.png"),
+    "vincentbox": Image("dialogue/vincentbox.png"),
+    "zaalbox": Image("dialogue/zaalbox.png"),
+    "mysterious0": Image("dialogue/mysterious0.png"),
+    "mysterious1": Image("dialogue/mysterious1.png"),
+    "mysterious2": Image("dialogue/mysterious2.png"),
+    "mysterious3": Image("dialogue/mysterious3.png"),
+    "vincent0": Image("dialogue/vincent0.png"),
+    "vincent1": Image("dialogue/vincent1.png"),
+    "vincent2": Image("dialogue/vincent2.png"),
+    "vincent3": Image("dialogue/vincent3.png"),
+    "vincent4": Image("dialogue/vincent4.png"),
+    "vincent5": Image("dialogue/vincent5.png"),
+    "vincent6": Image("dialogue/vincent6.png"),
+    "vincent7": Image("dialogue/vincent7.png"),
+    "vincent8": Image("dialogue/vincent8.png"),
+    "zaal0": Image("dialogue/zaal0.png"),
+    "zaal1": Image("dialogue/zaal1.png"),
+    "zaal2": Image("dialogue/zaal2.png"),
+    "zaal3": Image("dialogue/zaal3.png"),
+    "zaal4": Image("dialogue/zaal4.png"),
 }
 
 # Loading ability images
 ability_images = {
     "firebolt": {
         "Vincent Slime": {
-            "left": [load("vincent/slime/firebolt/left" + str(n) + ".png") for n in range(12)],
-            "up": [load("vincent/slime/firebolt/up" + str(n) + ".png") for n in range(12)],
-            "right": [load("vincent/slime/firebolt/right" + str(n) + ".png") for n in range(12)],
-            "down": [load("vincent/slime/firebolt/down" + str(n) + ".png") for n in range(12)]
+            "left": [Image("vincent/slime/firebolt/left" + str(n) + ".png") for n in range(12)],
+            "up": [Image("vincent/slime/firebolt/up" + str(n) + ".png") for n in range(12)],
+            "right": [Image("vincent/slime/firebolt/right" + str(n) + ".png") for n in range(12)],
+            "down": [Image("vincent/slime/firebolt/down" + str(n) + ".png") for n in range(12)]
         }
     }
 }
 
 # Loading death images
 death_images = {
-    "Vincent Slime": [load("vincent/slime/death" + str(n) + ".png") for n in range(12)],
-    "Enemy Slime": [load("enemy/slime/death" + str(n) + ".png") for n in range(10)],
-    "Firebolt": [{direction: load("firebolt/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(8)],
-    "Inferno": [{direction: load("inferno/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(11)],
+    "Vincent Slime": [Image("vincent/slime/death" + str(n) + ".png") for n in range(12)],
+    "Enemy Slime": [Image("enemy/slime/death" + str(n) + ".png") for n in range(10)],
+    "Firebolt": [{direction: Image("firebolt/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(8)],
+    "Inferno": [{direction: Image("inferno/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(11)],
 }
 
 # Loading tutorial images
-tutorial = [load("tutorial/tutorial" + str(n) + ".png") for n in range(13)]
+tutorial = [Image("tutorial/tutorial" + str(n) + ".png") for n in range(13)]
 
 # Loading spellbook images
 spellbook_images = {
-    "spellbook_default": load("spellbook/spellbook_default.png"),
-    "firebolt_uncharged": load("spellbook/firebolt_uncharged.png"),
-    "firebolt1": load("spellbook/firebolt1.png")
+    "spellbook_default": Image("spellbook/spellbook_default.png"),
+    "firebolt_uncharged": Image("spellbook/firebolt_uncharged.png"),
+    "firebolt1": Image("spellbook/firebolt1.png")
     }
 
 # Loading hud images
 hud_images = {
-    "hud": load("hud/hud.png"),
-    "health_orb": load("hud/health_orb.png"),
-    "expbar": load("hud/expbar.png"),
-    "expback": load("hud/expback.png"),
-    "firebolt": load("hud/firebolt.png"),
-    "firebolt_cooldown": load("hud/firebolt_cooldown.png"),
-    "slime_chunk": load("hud/slime_chunk.png")
+    "hud": Image("hud/hud.png"),
+    "health_orb": Image("hud/health_orb.png"),
+    "expbar": Image("hud/expbar.png"),
+    "expback": Image("hud/expback.png"),
+    "firebolt": Image("hud/firebolt.png"),
+    "firebolt_cooldown": Image("hud/firebolt_cooldown.png"),
+    "slime_chunk": Image("hud/slime_chunk.png")
 }
 
 # Loading level up images
-levelup_images = [load("levelup/" + str(n) + ".png") for n in range(15)]
+levelup_images = [Image("levelup/" + str(n) + ".png") for n in range(15)]
 
 # Loading zaal images
 zaal_images = {
-    "health_back": load("zaal/health_back.png"),
-    "health": load("zaal/health.png"),
-    "health_icon": load("zaal/health_icon.png"),
-    "death": [load("zaal/death" + str(n) + ".png") for n in range(12)],
-    "zaal": [load("zaal/zaal" + str(n) + ".png") for n in range(2)],
-    "attack": [load("zaal/attack" + str(n) + ".png") for n in range(19)]
+    "health_back": Image("zaal/health_back.png"),
+    "health": Image("zaal/health.png"),
+    "health_icon": Image("zaal/health_icon.png"),
+    "death": [Image("zaal/death" + str(n) + ".png") for n in range(12)],
+    "zaal": [Image("zaal/zaal" + str(n) + ".png") for n in range(2)],
+    "attack": [Image("zaal/attack" + str(n) + ".png") for n in range(19)]
 }
 
-credits_images = [load("credits/credits" + str(n) + ".png").convert() for n in range(8)]
+credits_images = [Image("credits/credits" + str(n) + ".png", convert_alpha=False) for n in range(8)]
 
-esc_exit = load("esc_exit.png")
-controls_page = load("controls.png")
+esc_exit = Image("esc_exit.png")
+controls_page = Image("controls.png")
 controls_page.blit(esc_exit, (0, 0))
 
 
@@ -1251,7 +1227,7 @@ slime_portal = Extra("room2/portal_symbol_slime", "below", -1000, -1000)
 portal_burn = Extra("room2/portal_burn", "below", -1000, -1000)
 
 rooms = [
-    Room("Room 0", load("room0/lava_back.png"),
+    Room("Room 0", Image("room0/lava_back.png"),
          [Extra("sharedroom/lava_back_glow0", "below", 0, 1166, 0, 0, 5, 0.2),
           Extra("room0/black_patches0", "below", 0, 1166, 10, "x", 2, 1),
           Extra("room0/back", "below", 0, 0),
@@ -1261,7 +1237,7 @@ rooms = [
          [Exit(Coordinates(6, -1), "up", 1, Coordinates(11, 14)),
           Exit(Coordinates(7, -1), "up", 1, Coordinates(12, 14)),
           Exit(Coordinates(8, -1), "up", 1, Coordinates(13, 14))]),
-    Room("Room 1", load("room1/back.png"),
+    Room("Room 1", Image("room1/back.png"),
          [Extra("room1/barrier", "below", 55, 1054),
           Extra("room1/bottom", "above", 0, 1051, start_y=0, end_y=11),
           Extra("room1/bottom", "above", 0, 1051, start_x=11, end_x=13, start_y=12, end_y=15),
@@ -1275,7 +1251,7 @@ rooms = [
           Exit(Coordinates(11, -1), "up", 2, Coordinates(45, 32)),
           Exit(Coordinates(12, -1), "up", 2, Coordinates(46, 32)),
           Exit(Coordinates(13, -1), "up", 2, Coordinates(47, 32))]),
-    Room("Room 2", load("room2/lava_back.png"),
+    Room("Room 2", Image("room2/lava_back.png"),
          [Extra("TESSELATEsharedroom/lava_back_glow0", "below", 0, 276, 0, 0, 5, 0.2),
           Extra("TESSELATEsharedroom/black_patches0", "below", 0, 276, 10, "x", 2, 1),
           Extra("room2/back", "below", 0, 0),
@@ -1362,7 +1338,7 @@ rooms = [
          [Exit(Coordinates(45, 33), "down", 1, Coordinates(11, 0)),
           Exit(Coordinates(46, 33), "down", 1, Coordinates(12, 0)),
           Exit(Coordinates(47, 33), "down", 1, Coordinates(13, 0))]),
-    Room("Room 3", load("room3/background.png"),
+    Room("Room 3", Image("room3/background.png"),
          [Extra("TESSELATEsharedroom/lava_back_glow0", "below", 0, 0, 0, 0, 5, 0.2),
           Extra("TESSELATEsharedroom/black_patches0", "below", 0, 0, 10, "x", 2, 1),
           Extra("room3/platform", "below", 0, 0)],
@@ -1410,8 +1386,8 @@ while session.is_running:
             session.audio.voice_volume = menus["options menu"].settings[3]
                 
         elif current == "controls":
-            session.screen.blit(menus["main menu"].background, (0, 0))
-            session.screen.blit(controls_page, (0, 0))
+            menus["main menu"].background.display(0, 0)
+            controls_page.display(0, 0)
             
             if session.keys.escape or session.keys.backspace:
                 current = "main menu"
@@ -1452,7 +1428,7 @@ while session.is_running:
                         cutscene_start_time = session.uptime - 17
                 elif cutscene_time < 10017:
                     current_room.display_room(vincent)
-                    session.screen.blit(tutorial[0], (0, 0))
+                    tutorial[0].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10017
                 else:
@@ -1485,13 +1461,13 @@ while session.is_running:
                         flux.x += 70*(vincent.position.x - 12)
                         coordinates_set = True
                     star.display(current_room, vincent)
-                    session.screen.blit(vincent.image, (vincent.x,vincent.y))
+                    vincent.image.display(vincent.x, vincent.y)
                     current_room.extras[5].display(current_room, vincent)
                     if cutscene_time > 61 and not session.audio.sound.is_playing:
                         session.audio.sound.play(AudioClip("transform.ogg"))
                 elif cutscene_time < 63.7:                
                     star.display(current_room, vincent)
-                    session.screen.blit(vincent.image, (vincent.x,vincent.y))
+                    vincent.image.display(vincent.x, vincent.y)
                     flux.display(current_room, vincent)                    
                     current_room.extras[5].display(current_room, vincent)
                     fade_screen.fill((151, 0, 0, int(255*((1/1.3)*(cutscene_time-62.4)))))
@@ -1501,7 +1477,7 @@ while session.is_running:
                     if vincent.form == "human":
                         vincent.transform()
                 elif cutscene_time < 66:
-                    session.screen.blit(vincent.image, (vincent.x,vincent.y))                    
+                    vincent.image.display(vincent.x, vincent.y)                    
                     current_room.extras[5].display(current_room, vincent)
                     fade_screen.fill((151, 0, 0, int(255*(1-0.5*(cutscene_time-64)))))
                     session.screen.blit(fade_screen, (0, 0))
@@ -1536,7 +1512,7 @@ while session.is_running:
                     fade_screen.fill((255, 255, 255, 255*(1-0.5*(cutscene_time))))
                     session.screen.blit(fade_screen, (0, 0))
                 elif cutscene_time < 10002:
-                    session.screen.blit(tutorial[1], (0, 0))
+                    tutorial[1].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10002
                 else:
@@ -1547,44 +1523,44 @@ while session.is_running:
                 current_room.display_room(vincent)
                 if cutscene_time < 10000:
                     display_spellbook()
-                    session.screen.blit(tutorial[2], (0, 0))
+                    tutorial[2].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10000
                 elif cutscene_time < 20000:
                     display_hud()
-                    session.screen.blit(hud_images["firebolt"], (760, 1029))
+                    hud_images["firebolt"].display(760, 1029)
                     display_spellbook()
                     if session.keys.escape or session.keys.backspace:
                         cutscene_start_time = session.uptime - 20000
                 elif cutscene_time < 30000:
-                    session.screen.blit(tutorial[3], (0, 0))
+                    tutorial[3].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 30000
                 elif cutscene_time < 40000:
-                    session.screen.blit(tutorial[4], (0, 0))
+                    tutorial[4].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 40000
                 elif cutscene_time < 50000:
-                    session.screen.blit(tutorial[5], (0, 0))
+                    tutorial[5].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 50000
                 elif cutscene_time < 60000:
-                    session.screen.blit(tutorial[6], (0, 0))
+                    tutorial[6].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 60000
                 elif cutscene_time < 70000:
-                    session.screen.blit(tutorial[7], (0, 0))
+                    tutorial[7].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 70000
                 elif cutscene_time < 80000:
                     display_hud()                    
-                    session.screen.blit(hud_images["firebolt"], (760, 1029))
-                    session.screen.blit(tutorial[8], (0, 0))
+                    hud_images["firebolt"].display(760, 1029)
+                    tutorial[8].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 80000
                 else:
                     display_hud()
-                    session.screen.blit(hud_images["firebolt"], (760, 1029))
+                    hud_images["firebolt"].display(760, 1029)
                     show_hud = True
                     firebolt.unlocked = True
                     spells.append("firebolt")
@@ -1597,7 +1573,7 @@ while session.is_running:
                     if not display_dialogue("vincent", 6):
                         cutscene_start_time = session.uptime - 25
                 elif cutscene_time < 10025:
-                    session.screen.blit(tutorial[9], (0, 0))
+                    tutorial[9].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10025
                 else:
@@ -1612,7 +1588,7 @@ while session.is_running:
             elif current[8] == "5":
                 current_room.display_room(vincent)
                 if cutscene_time < 10000:
-                    session.screen.blit(tutorial[10], (0, 0))
+                    tutorial[10].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10000
                 else:
@@ -1646,7 +1622,7 @@ while session.is_running:
             
             elif current[8] == "8":
                 current_room.display_room(vincent)                
-                session.screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
+                zaal_images["zaal"][(frame%6)//3].display(current_room.x + 840, current_room.y + 71)
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
@@ -1696,72 +1672,72 @@ while session.is_running:
             cutscene_time = session.uptime - cutscene_start_time
             if cutscene_time < 12.0/session.fps:
                 current_room.display_room(vincent)
-                session.screen.blit(zaal_images["death"][int(cutscene_time*session.fps)], (current_room.x + 840, current_room.y + 71))
+                zaal_images["death"][int(cutscene_time*session.fps)].display(current_room.x + 840, current_room.y + 71)
             elif cutscene_time < 5:
                 current_room.display_room(vincent)
                 fade_screen.fill((0, 0, 0, 51*cutscene_time))
                 session.screen.blit(fade_screen, (0, 0))
             else:
-                session.screen.blit(credits_images[7], (0, 0))
+                credits_images[7].display(0, 0)
                 if cutscene_time < 7:
                     credits_images[0].set_alpha(127.5*(cutscene_time-5))
-                    session.screen.blit(credits_images[0], (0, 0))
+                    credits_images[0].display(0, 0)
                 elif cutscene_time < 10:
-                    session.screen.blit(credits_images[0], (0, 0))
+                    credits_images[0].display(0, 0)
                 elif cutscene_time < 12:
                     credits_images[0].set_alpha(255*(1-0.5*(cutscene_time-10)))
-                    session.screen.blit(credits_images[0], (0, 0))
+                    credits_images[0].display(0, 0)
                     
                 elif cutscene_time < 14:
                     credits_images[1].set_alpha(127.5*(cutscene_time-12))
-                    session.screen.blit(credits_images[1], (0, 0))
+                    credits_images[1].display(0, 0)
                 elif cutscene_time < 17:
-                    session.screen.blit(credits_images[1], (0, 0))
+                    credits_images[1].display(0, 0)
                 elif cutscene_time < 19:
                     credits_images[1].set_alpha(255*(1-0.5*(cutscene_time-17)))
-                    session.screen.blit(credits_images[1], (0, 0))
+                    credits_images[1].display(0, 0)
                     
                 elif cutscene_time < 21:
                     credits_images[2].set_alpha(127.5*(cutscene_time-19))
-                    session.screen.blit(credits_images[2], (0, 0))
+                    credits_images[2].display(0, 0)
                 elif cutscene_time < 24:
-                    session.screen.blit(credits_images[2], (0, 0))
+                    credits_images[2].display(0, 0)
                 elif cutscene_time < 26:
                     credits_images[2].set_alpha(255*(1-0.5*(cutscene_time-24)))
-                    session.screen.blit(credits_images[2], (0, 0))
+                    credits_images[2].display(0, 0)
                     
                 elif cutscene_time < 28:
                     credits_images[3].set_alpha(127.5*(cutscene_time-26))
-                    session.screen.blit(credits_images[3], (0, 0))
+                    credits_images[3].display(0, 0)
                 elif cutscene_time < 31:
-                    session.screen.blit(credits_images[3], (0, 0))
+                    credits_images[3].display(0, 0)
                 elif cutscene_time < 33:
                     credits_images[3].set_alpha(255*(1-0.5*(cutscene_time-31)))
-                    session.screen.blit(credits_images[3], (0, 0))
+                    credits_images[3].display(0, 0)
                     
                 elif cutscene_time < 35:
                     credits_images[4].set_alpha(127.5*(cutscene_time-33))
-                    session.screen.blit(credits_images[4], (0, 0))
+                    credits_images[4].display(0, 0)
                 elif cutscene_time < 38:
-                    session.screen.blit(credits_images[4], (0, 0))
+                    credits_images[4].display(0, 0)
                 elif cutscene_time < 40:
                     credits_images[4].set_alpha(255*(1-0.5*(cutscene_time-38)))
-                    session.screen.blit(credits_images[4], (0, 0))
+                    credits_images[4].display(0, 0)
                     
                 elif cutscene_time < 42:
                     credits_images[5].set_alpha(127.5*(cutscene_time-40))
-                    session.screen.blit(credits_images[5], (0, 0))
+                    credits_images[5].display(0, 0)
                 elif cutscene_time < 45:
-                    session.screen.blit(credits_images[5], (0, 0))
+                    credits_images[5].display(0, 0)
                 elif cutscene_time < 47:
                     credits_images[5].set_alpha(255*(1-0.5*(cutscene_time-45)))
-                    session.screen.blit(credits_images[5], (0, 0))
+                    credits_images[5].display(0, 0)
                     
                 elif cutscene_time < 49:
                     credits_images[6].set_alpha(127.5*(cutscene_time-47))
-                    session.screen.blit(credits_images[6], (0, 0))
+                    credits_images[6].display(0, 0)
                 else:
-                    session.screen.blit(credits_images[6], (0, 0))
+                    credits_images[6].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         session.audio.stop()
                         current = "main menu"   #(maybe), prolly go to credits isnt it
@@ -1825,12 +1801,12 @@ while session.is_running:
                     inferno.cast(vincent)
                     if zaal_animation > 0:
                         zaal_animation -= 1
-                        session.screen.blit(zaal_images["attack"][18-zaal_animation], (current_room.x + 840, current_room.y + 71))
+                        zaal_images["attack"][18-zaal_animation].display(current_room.x + 840, current_room.y + 71)
                     else:
-                        session.screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
-                    session.screen.blit(zaal_images["health_back"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)))
-                    session.screen.blit(zaal_images["health"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)), (0, 0,zaal_life, 52))
-                    session.screen.blit(zaal_images["health_icon"], (1786, 0))
+                        zaal_images["zaal"][(frame % 6)//3].display(current_room.x + 840, current_room.y + 71)
+                    zaal_images["health_back"].display(69*(screen_width/1920.0), 80*(screen_height/1080.0))
+                    zaal_images["health"].display(69*(screen_width/1920.0), 80*(screen_height/1080.0), area=(0, 0,zaal_life, 52))
+                    zaal_images["health_icon"].display(1786, 0)
 
                     if firebolt.position in [(10, 2), (11, 2), (12, 2), (10, 3), (11, 3), (12, 3)] and firebolt.alive:
                         damage_dealt = int(firebolt.damage*(0.9 + 0.2*random.random()))
@@ -1866,12 +1842,12 @@ while session.is_running:
                 if show_spellbook:
                     display_spellbook()
                     if session.mouse.is_in(748, 499, 825, 576):
-                        session.screen.blit(tutorial[12], (0, 0))
+                        tutorial[12].display(0, 0)
                         if session.mouse.left and cutscene5_played and not cutscene6_played and vincent.skill_points > 0:
                             vincent.skill_points -= 1
                             cutscene6_played = True
                     elif session.mouse.is_in(579, 428, 656, 505):
-                        session.screen.blit(tutorial[11], (0, 0))
+                        tutorial[11].display(0, 0)
                     if session.keys.escape or session.keys.backspace:
                         show_spellbook = False
 
@@ -1883,11 +1859,11 @@ while session.is_running:
 
                 if levelling_up:
                     if levelup_frame < 22:
-                        session.screen.blit(levelup_images[levelup_frame//2], (0, 0))
+                        levelup_images[levelup_frame//2].display(0, 0)
                     elif levelup_frame < 52:
-                        session.screen.blit(levelup_images[11], (0, 0))
+                        levelup_images[11].display(0, 0)
                     elif levelup_frame < 58:
-                        session.screen.blit(levelup_images[(levelup_frame-28)//2], (0, 0))
+                        levelup_images[(levelup_frame-28)//2].display(0, 0)
                     else:
                         levelup_frame = 0
                         levelling_up = False

@@ -39,7 +39,7 @@ class Session:
     @icon.setter
     def icon(self, icon: Image):
         self._icon = icon
-        pygame.display.set_icon(icon.image)
+        pygame.display.set_icon(icon.surface)
 
     @property
     def caption(self):
