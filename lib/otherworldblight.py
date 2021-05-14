@@ -23,28 +23,6 @@ from lib.loot import Loot
 from lib.coordinates import Coordinates
 
 
-# Defining the error logging function
-def log(error, error_message):
-    try:
-        error_log = open("../log.txt", "a")
-        try:
-            error_log.write(str(datetime.datetime.utcnow())[0:19] + " - " + error_message + ": " + str(error) + "\n")
-        except:
-            error_log.write(str(datetime.datetime.utcnow())[0:19] + " - " + error_message + ": Details Unknown\n")
-        error_log.close()
-    except Exception:  # Likely never happens as no reliance on file_directory anymore - remove.
-        ctypes.windll.user32.MessageBoxW(0, "An error has occurred:\n\n    " + error_message + ".\n\n\nThis error occurred very early during game initialisation and could not be logged.", "Error", 1)
-        raise
-
-    session.is_running = False             # temporary
-    if False and pygame.display.get_surface() is not None and error_message != "Failed to display error message":
-        error_time = 3*session.fps
-    # add some error sound to play here
-    else:   # Creating a window to inform the user that error has occurred
-        ctypes.windll.user32.MessageBoxW(0, "An error has occurred:\n\n    " + error_message + ".\n\n\nPlease check log.txt for details.", "Error", 1)
-        raise
-    
-        
 ### Defining the load function for loading other files
 def load(file_name):
     length = len(file_name)
@@ -57,8 +35,6 @@ def load(file_name):
 
     if file_type == "png":
         return pygame.image.load("../images/" + file_name).convert_alpha()
-    elif file_type == "mpg":
-        return VideoFileClip("../Video Files/" + file_name).subclip(0, 3)
     else:
         raise Exception("Invalid file type")
 
@@ -67,7 +43,6 @@ def load(file_name):
 
 ## Assigning essential game variables
 session = Session(screen)
-error_time = 0
 show_hud = False
 show_spellbook = False
 levelling_up = False
@@ -1238,14 +1213,14 @@ credits_images = [load("credits/credits" + str(n) + ".png").convert() for n in r
 
 esc_exit = load("esc_exit.png")
 controls_page = load("controls.png")
+controls_page.blit(esc_exit, (0, 0))
 
 
 # VIDEO IMPORTING ----------------------------------------------------------------------------------
-introduction = load("introduction.mpg")
+introduction = VideoFileClip("../Video Files/introduction.mpg").subclip(0, 3)
 
 
 # PROGRAM DISPLAY ----------------------------------------------------------------------------------
-
 current = "main menu"
 npcs = []   # A list of all currently loaded npcs. All Npc objects are appended to this list when they are initialised.
 abilities = {}  # A dictionary of all currently loaded abilities
@@ -1442,7 +1417,6 @@ while session.is_running:
         elif current == "controls":
             session.screen.blit(menus["main menu"].background, (0, 0))
             session.screen.blit(controls_page, (0, 0))
-            session.screen.blit(esc_exit, (0, 0))
             
             if session.keys.escape or session.keys.backspace:
                 current = "main menu"
@@ -1993,14 +1967,6 @@ while session.is_running:
             
         elif current == "exit":
             session.is_running = False
-    
-    # Displaying an error message if requested
-    try:
-        if error_time > 0:
-            error_time -= 1
-            session.screen.blit(load("error_message.png"), (1320*(screen_width/1920.0), 0))
-    except Exception as error:
-        log(error, "Failed to display error message")
 
     frame += 1  # Incrementing the current frame
     pygame.display.flip()   # Updating the screen at the end of blitting
