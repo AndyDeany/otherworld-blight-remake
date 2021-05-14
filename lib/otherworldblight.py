@@ -819,87 +819,87 @@ class Ability(Character):
 
 # The class for extra things that are shown as well as the canvas and characters in rooms                   
 class Extra(object):
-        def __init__(self, image_name, placement, x, y, scroll_speed=0, scroll_axis=None, rotations=1, rotation_interval=0.0, start_x=None, end_x=None, start_y=None, end_y=None):
-            # Default values are for when the extra should always be shown.
-            self.image_name = image_name
-            if image_name[0:9] in ["TESSELATE", "NEGATIVES"]:   # TESSELATE indicates that the image should be tesselated until the end of the screen. NEGATIVES indicates that the image should be shown if the player is NOT in the specified bounds
-                self.image = extra_images[image_name[9:]]
+    def __init__(self, image_name, placement, x, y, scroll_speed=0, scroll_axis=None, rotations=1, rotation_interval=0.0, start_x=None, end_x=None, start_y=None, end_y=None):
+        # Default values are for when the extra should always be shown.
+        self.image_name = image_name
+        if image_name[0:9] in ["TESSELATE", "NEGATIVES"]:   # TESSELATE indicates that the image should be tesselated until the end of the screen. NEGATIVES indicates that the image should be shown if the player is NOT in the specified bounds
+            self.image = extra_images[image_name[9:]]
+        else:
+            self.image = extra_images[image_name]
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.placement = placement  # Whether the extra is shown below or above the characters
+        self.x = x*(screen_width/1920.0)  # The image's x displacement from the canvas in pixels
+        self.y = y*(screen_height/1080.0)  # The image's y displacement from the canvas in pixels
+        self.original_x = self.x
+        self.original_y = self.y
+        self.scroll_speed = scroll_speed    # The scroll speed of the image in pixels per second in the positive direction of the axis
+        self.scroll_axis = scroll_axis      # The axis in which the image scrolls
+        self.rotations = rotations  # The number of images the extra switches between over time
+        if rotations > 1:
+            if image_name[0:9] in ["TESSELATE", "NEGATIVES"]:
+                self.images = [extra_images[image_name[9:len(image_name)-len(str(rotations-1))] + str(n)] for n in range(rotations)] # Making a list of all the image files for extras that rotate through images
             else:
-                self.image = extra_images[image_name]
-            self.width = self.image.get_width()
-            self.height = self.image.get_height()
-            self.placement = placement  # Whether the extra is shown below or above the characters
-            self.x = x*(screen_width/1920.0)  # The image's x displacement from the canvas in pixels
-            self.y = y*(screen_height/1080.0)  # The image's y displacement from the canvas in pixels
-            self.original_x = self.x
-            self.original_y = self.y
-            self.scroll_speed = scroll_speed    # The scroll speed of the image in pixels per second in the positive direction of the axis
-            self.scroll_axis = scroll_axis      # The axis in which the image scrolls
-            self.rotations = rotations  # The number of images the extra switches between over time
-            if rotations > 1:
-                if image_name[0:9] in ["TESSELATE", "NEGATIVES"]:
-                    self.images = [extra_images[image_name[9:len(image_name)-len(str(rotations-1))] + str(n)] for n in range(rotations)] # Making a list of all the image files for extras that rotate through images
-                else:
-                    self.images = [extra_images[image_name[0:len(image_name)-len(str(rotations-1))] + "".join(["0" for zero in range(len(str(rotations-1)) - len(str(n)))]) + str(n)] for n in range(rotations)] # Making a list of all the image files for extras that rotate through images
-                
-            self.rotation_interval = rotation_interval    # How often the images rotate (in seconds) (must be at least 1/session.fps)
-            self.image_number = 0
-            self.rotation_direction = "up"
-            self.start_x = start_x  # The first grid x coordinate of the player's character where the image must be shown
-            self.end_x = end_x      # The last grid x coordinate of the player's character where the image must be shown
-            self.start_y = start_y  # The first grid y coordinate of the player's character where the image must be shown
-            self.end_y = end_y      # The last grid y coordinate of the player's character where the image must be shown
-                        
-        def display(self, room, player):
-            # Checking if the player is within the coordinates at which the extra should be displayed
-            in_x = (self.start_x is None and self.end_x is None) or self.start_x <= player.position.x <= self.end_x
-            in_y = (self.start_y is None and self.end_y is None) or self.start_y <= player.position.y <= self.end_y
-            show_extra = in_x and in_y
+                self.images = [extra_images[image_name[0:len(image_name)-len(str(rotations-1))] + "".join(["0" for zero in range(len(str(rotations-1)) - len(str(n)))]) + str(n)] for n in range(rotations)] # Making a list of all the image files for extras that rotate through images
 
-            if self.scroll_speed != 0:   # Changing the position of images that should scroll
-                if self.scroll_axis == "x":
-                    self.x += float(self.scroll_speed)/session.fps
-                    if abs(self.x - self.original_x) >= self.width:
-                        self.x = self.original_x
-                elif self.scroll_axis == "y":
-                    if abs(self.y - self.original_y) >= self.height:
-                        self.y = self.original_y
-                else:
-                    raise ValueError(f"Invalid scroll axis '{self.scroll_axis}'.")
+        self.rotation_interval = rotation_interval    # How often the images rotate (in seconds) (must be at least 1/session.fps)
+        self.image_number = 0
+        self.rotation_direction = "up"
+        self.start_x = start_x  # The first grid x coordinate of the player's character where the image must be shown
+        self.end_x = end_x      # The last grid x coordinate of the player's character where the image must be shown
+        self.start_y = start_y  # The first grid y coordinate of the player's character where the image must be shown
+        self.end_y = end_y      # The last grid y coordinate of the player's character where the image must be shown
 
-            if self.rotations > 1:  # Changing the image at the correct time for images that rotate
-                if frame % int(self.rotation_interval*session.fps) == 0:
-                    if self.rotation_direction == "up":
-                        self.image_number += 1
-                        if self.image_number == self.rotations:
-                            self.image_number -= 2
-                            self.rotation_direction = "down"
-                    else:   # When rotation direction = "down"
-                        self.image_number -= 1
-                        if self.image_number == -1:
-                            self.image_number = 1
-                            self.rotation_direction = "up"
-                    self.image = self.images[self.image_number]
+    def display(self, room, player):
+        # Checking if the player is within the coordinates at which the extra should be displayed
+        in_x = (self.start_x is None and self.end_x is None) or self.start_x <= player.position.x <= self.end_x
+        in_y = (self.start_y is None and self.end_y is None) or self.start_y <= player.position.y <= self.end_y
+        show_extra = in_x and in_y
 
-            if (show_extra and not self.image_name[0:9] == "NEGATIVES") or (not show_extra and self.image_name[0:9] == "NEGATIVES"):
-                if self.image_name[0:9] == "TESSELATE":
-                    for horizontal in range(-1,(room.width//self.width) + 1):
-                        for vertical in range(-1,(room.height//self.height) + 1):
-                            session.screen.blit(self.image, (room.x + self.x + horizontal*self.width, room.y + self.y + vertical*self.height))
-                else:
-                    session.screen.blit(self.image, (room.x + self.x, room.y + self.y))
+        if self.scroll_speed != 0:   # Changing the position of images that should scroll
+            if self.scroll_axis == "x":
+                self.x += float(self.scroll_speed)/session.fps
+                if abs(self.x - self.original_x) >= self.width:
+                    self.x = self.original_x
+            elif self.scroll_axis == "y":
+                if abs(self.y - self.original_y) >= self.height:
+                    self.y = self.original_y
+            else:
+                raise ValueError(f"Invalid scroll axis '{self.scroll_axis}'.")
 
-                if self.scroll_speed != 0:   # Showing an extra copy of the image file for smooth scrolling
-                    if self.scroll_speed > 0:
-                        if self.scroll_axis == "x":
-                            session.screen.blit(self.image, (room.x + self.x - room.width, room.y + self.y))
-                        elif self.scroll_axis == "y":
-                            session.screen.blit(self.image, (room.x + self.x, room.y + self.y - room.height))
-                    else:   # When the scroll speed is negative
-                        if self.scroll_axis == "x":
-                            session.screen.blit(self.image, (room.x + self.x + room.width, room.y + self.y))
-                        elif self.scroll_axis == "y":
-                            session.screen.blit(self.image, (room.x + self.x, room.y + self.y + room.height))
+        if self.rotations > 1:  # Changing the image at the correct time for images that rotate
+            if frame % int(self.rotation_interval*session.fps) == 0:
+                if self.rotation_direction == "up":
+                    self.image_number += 1
+                    if self.image_number == self.rotations:
+                        self.image_number -= 2
+                        self.rotation_direction = "down"
+                else:   # When rotation direction = "down"
+                    self.image_number -= 1
+                    if self.image_number == -1:
+                        self.image_number = 1
+                        self.rotation_direction = "up"
+                self.image = self.images[self.image_number]
+
+        if (show_extra and not self.image_name[0:9] == "NEGATIVES") or (not show_extra and self.image_name[0:9] == "NEGATIVES"):
+            if self.image_name[0:9] == "TESSELATE":
+                for horizontal in range(-1,(room.width//self.width) + 1):
+                    for vertical in range(-1,(room.height//self.height) + 1):
+                        session.screen.blit(self.image, (room.x + self.x + horizontal*self.width, room.y + self.y + vertical*self.height))
+            else:
+                session.screen.blit(self.image, (room.x + self.x, room.y + self.y))
+
+            if self.scroll_speed != 0:   # Showing an extra copy of the image file for smooth scrolling
+                if self.scroll_speed > 0:
+                    if self.scroll_axis == "x":
+                        session.screen.blit(self.image, (room.x + self.x - room.width, room.y + self.y))
+                    elif self.scroll_axis == "y":
+                        session.screen.blit(self.image, (room.x + self.x, room.y + self.y - room.height))
+                else:   # When the scroll speed is negative
+                    if self.scroll_axis == "x":
+                        session.screen.blit(self.image, (room.x + self.x + room.width, room.y + self.y))
+                    elif self.scroll_axis == "y":
+                        session.screen.blit(self.image, (room.x + self.x, room.y + self.y + room.height))
             
             
 class Exit(object):
