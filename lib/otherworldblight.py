@@ -23,7 +23,7 @@ from lib.loot import Loot
 from lib.coordinates import Coordinates
 
 
-### Defining the load function for loading other files
+# Defining the load function for loading other files
 def load(file_name):
     length = len(file_name)
     for index in range(length):
@@ -39,17 +39,15 @@ def load(file_name):
         raise Exception("Invalid file type")
 
 
-### ---------- VARIABLE ASSIGNMENT - START ---------- ###
+# VARIABLE ASSIGNMENT ------------------------------------------------------------------------------
 
-## Assigning essential game variables
+# Assigning essential game variables
 session = Session(screen)
 show_hud = False
 show_spellbook = False
 levelling_up = False
 levelup_frame = 0
 movement_started = False
-#display_options = False
-#display_sure = False
 
 cutscene0_played = False
 cutscene1_played = False
@@ -71,16 +69,13 @@ zaal_animation = -1
 font = pygame.font.SysFont("Arial Regular", 90, False, False)
 dropfont = pygame.font.SysFont("Impact", 20, False, False)
 
-# Setting the screen resolution and creating the screen
-
-screen_width = session.screen.get_width()
-screen_height = session.screen.get_height()
-
-fade_screen = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)    # An extra surface for put on top of the screen, for fading
+screen_width, screen_height = session.screen.get_size()
+# Creating an extra surface for put on top of the screen, for fading
+fade_screen = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
 
 
 # Changes and reinitialises the screen with new settings
-def reinitialise_screen(resolution=(screen_width,screen_height), mode="fullscreen"):
+def reinitialise_screen(resolution=(screen_width, screen_height), mode="fullscreen"):
     global screen, screen_width, screen_height
     screen_width, screen_height = resolution
     flags = pygame.HWSURFACE | pygame.DOUBLEBUF
