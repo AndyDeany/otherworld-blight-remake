@@ -1,6 +1,5 @@
 import os
 import datetime
-import time
 import random
 import ctypes
 from operator import attrgetter
@@ -345,20 +344,20 @@ class Menu:
     
     # Displays the menu on the screen
     def display(self):
-        session.screen.blit(self.background, (0,0))
+        session.screen.blit(self.background, (0, 0))
         for item in self.permanent:
-            session.screen.blit(item, (0,0))
+            session.screen.blit(item, (0, 0))
 
         for option in range(len(self.options)):
             if self.sliders[option][0]:
                 session.screen.blit(self.options[option][0], ((960 + 4*self.settings[option])*(screen_width/1920.0), self.sliders[option][1]*(screen_height/1080.0)))
 
         if not self.sliders[self.current_selection][0]:
-            session.screen.blit(self.options[self.current_selection][self.settings[self.current_selection]], (0,0))
+            session.screen.blit(self.options[self.current_selection][self.settings[self.current_selection]], (0, 0))
 
         for index in range(len(self.options)):
             if len(self.options[index]) > 1:
-                session.screen.blit(self.options[index][self.settings[index]], (0,0))
+                session.screen.blit(self.options[index][self.settings[index]], (0, 0))
         
     # Changes the user's current selection in the menu
     def change_selection(self):
@@ -735,10 +734,9 @@ class Ability(Character):
                 self.room = player.room
                 player.current_ability = self.name.lower()            
                 self.cooldown = session.fps*self.max_cooldown
-        elif self.dead and zaal_animation == -1 and player.position in [(x,y) for y in range(4,15) for x in range(10,13)]+[(x,y) for y in range(2,4) for x in range(10)]+[(x,y) for y in range(2) for x in range(10,13)]+[(x,y) for y in range(2,4) for x in range(13,20)]:
+        elif self.dead and zaal_animation == -1 and player.position in [(x,y) for y in range(4, 15) for x in range(10, 13)]+[(x,y) for y in range(2, 4) for x in range(10)]+[(x,y) for y in range(2) for x in range(10, 13)]+[(x,y) for y in range(2, 4) for x in range(13, 20)]:
             zaal_animation = 18
             session.audio.sound.play(AudioClip("zaalattack.ogg", 0.2))
-        
     
     def cast(self, player):
         global zaal_animation
@@ -762,16 +760,16 @@ class Ability(Character):
             self.room = player.room
             self.cooldown = session.fps*self.max_cooldown
             zaal_animation = -1
-            if player.position in [(x,y) for y in range(4,15) for x in range(10,13)]:
+            if player.position in [(x,y) for y in range(4, 15) for x in range(10, 13)]:
                 self.position = Coordinates(player.position.x, 5)
                 self.moves = ["down" for distance in range(self.max_range)]
-            elif player.position in [(x,y) for y in range(2,4) for x in range(10)]:
+            elif player.position in [(x,y) for y in range(2, 4) for x in range(10)]:
                 self.position = Coordinates(9, player.position.y)
                 self.moves = ["left" for distance in range(self.max_range)]
-            elif player.position in [(x,y) for y in range(2) for x in range(10,13)]:
+            elif player.position in [(x,y) for y in range(2) for x in range(10, 13)]:
                 self.position = Coordinates(player.position.x, 1)
                 self.moves = ["up" for distance in range(self.max_range)]
-            elif player.position in [(x,y) for y in range(2,4) for x in range(13,20)]:
+            elif player.position in [(x,y) for y in range(2, 4) for x in range(13, 20)]:
                 self.position = Coordinates(13, player.position.y)
                 self.moves = ["right" for distance in range(self.max_range)]
             else:
@@ -779,8 +777,7 @@ class Ability(Character):
                 self.alive = False
                 self.dead = True
                 self.display = False
-                self.cooldown = 0
-        
+                self.cooldown = 0   
     
     def exist(self, room):
         if self.cooldown > 0:
@@ -791,7 +788,6 @@ class Ability(Character):
         self.check_display()
         self.check_collision()
     
-        
     def change_position(self, room):
         if self.movement_cooldown: # decrementing self.movement cooldown if it is not equal to 0
             self.movement_cooldown -= 1
@@ -823,7 +819,8 @@ class Ability(Character):
 
 # The class for extra things that are shown as well as the canvas and characters in rooms                   
 class Extra(object):
-        def __init__(self, image_name, placement, x, y, scroll_speed=0, scroll_axis=0, rotations=1, rotation_interval=0, start_x=None, end_x=None, start_y=None, end_y=None): # Default values are for when the extra should always be shown.
+        def __init__(self, image_name, placement, x, y, scroll_speed=0, scroll_axis=None, rotations=1, rotation_interval=0.0, start_x=None, end_x=None, start_y=None, end_y=None):
+            # Default values are for when the extra should always be shown.
             self.image_name = image_name
             if image_name[0:9] in ["TESSELATE", "NEGATIVES"]:   # TESSELATE indicates that the image should be tesselated until the end of the screen. NEGATIVES indicates that the image should be shown if the player is NOT in the specified bounds
                 self.image = extra_images[image_name[9:]]
@@ -1047,161 +1044,160 @@ class Room(object):
 
 # IMAGE IMPORTING ----------------------------------------------------------------------------------
 extra_images = {
-    "sharedroom/lava_back_glow0":load("sharedroom/lava_back_glow0.png"),
-    "sharedroom/lava_back_glow1":load("sharedroom/lava_back_glow1.png"),
-    "sharedroom/lava_back_glow2":load("sharedroom/lava_back_glow2.png"),
-    "sharedroom/lava_back_glow3":load("sharedroom/lava_back_glow3.png"),
-    "sharedroom/lava_back_glow4":load("sharedroom/lava_back_glow4.png"),
-    "sharedroom/black_patches0":load("sharedroom/black_patches0.png"),
-    "sharedroom/black_patches1":load("sharedroom/black_patches1.png"),
+    "sharedroom/lava_back_glow0": load("sharedroom/lava_back_glow0.png"),
+    "sharedroom/lava_back_glow1": load("sharedroom/lava_back_glow1.png"),
+    "sharedroom/lava_back_glow2": load("sharedroom/lava_back_glow2.png"),
+    "sharedroom/lava_back_glow3": load("sharedroom/lava_back_glow3.png"),
+    "sharedroom/lava_back_glow4": load("sharedroom/lava_back_glow4.png"),
+    "sharedroom/black_patches0": load("sharedroom/black_patches0.png"),
+    "sharedroom/black_patches1": load("sharedroom/black_patches1.png"),
     # Room 0
-    "room0/black_patches0":load("room0/black_patches0.png"),
-    "room0/black_patches1":load("room0/black_patches1.png"),
-    "room0/back":load("room0/back.png"),
-    "room0/front":load("room0/front.png"),
-    "room0/portal0":load("room0/portal0.png"),
-    "room0/portal1":load("room0/portal1.png"),
-    "room0/portal2":load("room0/portal2.png"),
-    "room0/portal3":load("room0/portal3.png"),
-    "room0/portal4":load("room0/portal4.png"),
-    "room0/portal5":load("room0/portal5.png"),
-    "room0/portal6":load("room0/portal6.png"),
-    "room0/portal7":load("room0/portal7.png"),
-    "room0/portal8":load("room0/portal8.png"),
-    "room0/portal9":load("room0/portal9.png"),
+    "room0/black_patches0": load("room0/black_patches0.png"),
+    "room0/black_patches1": load("room0/black_patches1.png"),
+    "room0/back": load("room0/back.png"),
+    "room0/front": load("room0/front.png"),
+    "room0/portal0": load("room0/portal0.png"),
+    "room0/portal1": load("room0/portal1.png"),
+    "room0/portal2": load("room0/portal2.png"),
+    "room0/portal3": load("room0/portal3.png"),
+    "room0/portal4": load("room0/portal4.png"),
+    "room0/portal5": load("room0/portal5.png"),
+    "room0/portal6": load("room0/portal6.png"),
+    "room0/portal7": load("room0/portal7.png"),
+    "room0/portal8": load("room0/portal8.png"),
+    "room0/portal9": load("room0/portal9.png"),
     # Room 1
-    "room1/barrier":load("room1/barrier.png"),
-    "room1/bottom":load("room1/bottom.png"),
-    "room1/bottom80":load("room1/bottom80.png"),
-    "room1/sides":load("room1/sides.png"),
-    "room1/star0":load("room1/star0.png"),
-    "room1/star1":load("room1/star1.png"),
-    "room1/star2":load("room1/star2.png"),
-    "room1/star3":load("room1/star3.png"),
-    "room1/star4":load("room1/star4.png"),
-    "room1/star5":load("room1/star5.png"),
-    "room1/star6":load("room1/star6.png"),
-    "room1/star7":load("room1/star7.png"),
-    "room1/star8":load("room1/star8.png"),
-    "room1/flux00":load("room1/flux00.png"),
-    "room1/flux01":load("room1/flux01.png"),
-    "room1/flux02":load("room1/flux02.png"),
-    "room1/flux03":load("room1/flux03.png"),
-    "room1/flux04":load("room1/flux04.png"),
-    "room1/flux05":load("room1/flux05.png"),
-    "room1/flux06":load("room1/flux06.png"),
-    "room1/flux07":load("room1/flux07.png"),
-    "room1/flux08":load("room1/flux08.png"),
-    "room1/flux09":load("room1/flux09.png"),
-    "room1/flux10":load("room1/flux10.png"),
-    "room1/flux11":load("room1/flux11.png"),
-    "room1/flux12":load("room1/flux12.png"),
+    "room1/barrier": load("room1/barrier.png"),
+    "room1/bottom": load("room1/bottom.png"),
+    "room1/bottom80": load("room1/bottom80.png"),
+    "room1/sides": load("room1/sides.png"),
+    "room1/star0": load("room1/star0.png"),
+    "room1/star1": load("room1/star1.png"),
+    "room1/star2": load("room1/star2.png"),
+    "room1/star3": load("room1/star3.png"),
+    "room1/star4": load("room1/star4.png"),
+    "room1/star5": load("room1/star5.png"),
+    "room1/star6": load("room1/star6.png"),
+    "room1/star7": load("room1/star7.png"),
+    "room1/star8": load("room1/star8.png"),
+    "room1/flux00": load("room1/flux00.png"),
+    "room1/flux01": load("room1/flux01.png"),
+    "room1/flux02": load("room1/flux02.png"),
+    "room1/flux03": load("room1/flux03.png"),
+    "room1/flux04": load("room1/flux04.png"),
+    "room1/flux05": load("room1/flux05.png"),
+    "room1/flux06": load("room1/flux06.png"),
+    "room1/flux07": load("room1/flux07.png"),
+    "room1/flux08": load("room1/flux08.png"),
+    "room1/flux09": load("room1/flux09.png"),
+    "room1/flux10": load("room1/flux10.png"),
+    "room1/flux11": load("room1/flux11.png"),
+    "room1/flux12": load("room1/flux12.png"),
     # Room 2
-    "room2/back":load("room2/back.png"),
-    "room2/barriers":load("room2/barriers.png"),
-    "room2/left_bottom_front1":load("room2/left_bottom_front1.png"),
-    "room2/left_bottom_front180":load("room2/left_bottom_front180.png"),
-    "room2/left_bottom_front2":load("room2/left_bottom_front2.png"),
-    "room2/left_bottom_front280":load("room2/left_bottom_front280.png"),
-    "room2/left_front1":load("room2/left_front1.png"),
-    "room2/left_front180":load("room2/left_front180.png"),
-    "room2/left_front2":load("room2/left_front2.png"),
-    "room2/left_front280":load("room2/left_front280.png"),
-    "room2/middle_front1":load("room2/middle_front1.png"),
-    "room2/middle_front180":load("room2/middle_front180.png"),
-    "room2/middle_front2":load("room2/middle_front2.png"),
-    "room2/middle_front280":load("room2/middle_front280.png"),
-    "room2/right_bottom_front":load("room2/right_bottom_front.png"),
-    "room2/right_bottom_front80":load("room2/right_bottom_front80.png"),
-    "room2/right_front":load("room2/right_front.png"),
-    "room2/right_front80":load("room2/right_front80.png"),
-    "room2/small_front1":load("room2/small_front1.png"),
-    "room2/small_front2":load("room2/small_front2.png"),
-    "room2/ruin":load("room2/ruin.png"),
-    "room2/farleft_sidewall":load("room2/farleft_sidewall.png"),
-    "room2/left_sidewall":load("room2/left_sidewall.png"),
-    "room2/middle_sidewall1":load("room2/middle_sidewall1.png"),
-    "room2/middle_sidewall2":load("room2/middle_sidewall2.png"),
-    "room2/right_sidewall":load("room2/right_sidewall.png"),
-    "room2/bottom_wall":load("room2/bottom_wall.png"),
-    "room2/bottom_wall80":load("room2/bottom_wall80.png"),
-    "room2/portal_burn":load("room2/portal_burn.png"),
-    "room2/portal_symbol":load("room2/portal_symbol.png"),
-    "room2/portal_symbol_slime":load("room2/portal_symbol_slime.png"),
-    "room2/book0":load("room2/book0.png"),
-    "room2/book1":load("room2/book1.png"),
-    "room2/book2":load("room2/book2.png"),
-    "room2/light00":load("room2/light00.png"),
-    "room2/light01":load("room2/light01.png"),
-    "room2/light02":load("room2/light02.png"),
-    "room2/light03":load("room2/light03.png"),
-    "room2/light04":load("room2/light04.png"),
-    "room2/light05":load("room2/light05.png"),
-    "room2/light06":load("room2/light06.png"),
-    "room2/light07":load("room2/light07.png"),
-    "room2/light08":load("room2/light08.png"),
-    "room2/light09":load("room2/light09.png"),
-    "room2/light10":load("room2/light10.png"),
-    "room2/light11":load("room2/light11.png"),
-    "room2/light12":load("room2/light12.png"),
-    "room2/light13":load("room2/light13.png"),
-    "room2/light14":load("room2/light14.png"),
-    "room2/light15":load("room2/light15.png"),
-    "room2/drop0":load("room2/drop0.png"),
-    "room2/drop1":load("room2/drop1.png"),
-    "room2/drop2":load("room2/drop2.png"),
-    "room2/drop3":load("room2/drop3.png"),
-    "room2/drop4":load("room2/drop4.png"),
-    "room2/drop5":load("room2/drop5.png"),
-    "room2/drop6":load("room2/drop6.png"),
+    "room2/back": load("room2/back.png"),
+    "room2/barriers": load("room2/barriers.png"),
+    "room2/left_bottom_front1": load("room2/left_bottom_front1.png"),
+    "room2/left_bottom_front180": load("room2/left_bottom_front180.png"),
+    "room2/left_bottom_front2": load("room2/left_bottom_front2.png"),
+    "room2/left_bottom_front280": load("room2/left_bottom_front280.png"),
+    "room2/left_front1": load("room2/left_front1.png"),
+    "room2/left_front180": load("room2/left_front180.png"),
+    "room2/left_front2": load("room2/left_front2.png"),
+    "room2/left_front280": load("room2/left_front280.png"),
+    "room2/middle_front1": load("room2/middle_front1.png"),
+    "room2/middle_front180": load("room2/middle_front180.png"),
+    "room2/middle_front2": load("room2/middle_front2.png"),
+    "room2/middle_front280": load("room2/middle_front280.png"),
+    "room2/right_bottom_front": load("room2/right_bottom_front.png"),
+    "room2/right_bottom_front80": load("room2/right_bottom_front80.png"),
+    "room2/right_front": load("room2/right_front.png"),
+    "room2/right_front80": load("room2/right_front80.png"),
+    "room2/small_front1": load("room2/small_front1.png"),
+    "room2/small_front2": load("room2/small_front2.png"),
+    "room2/ruin": load("room2/ruin.png"),
+    "room2/farleft_sidewall": load("room2/farleft_sidewall.png"),
+    "room2/left_sidewall": load("room2/left_sidewall.png"),
+    "room2/middle_sidewall1": load("room2/middle_sidewall1.png"),
+    "room2/middle_sidewall2": load("room2/middle_sidewall2.png"),
+    "room2/right_sidewall": load("room2/right_sidewall.png"),
+    "room2/bottom_wall": load("room2/bottom_wall.png"),
+    "room2/bottom_wall80": load("room2/bottom_wall80.png"),
+    "room2/portal_burn": load("room2/portal_burn.png"),
+    "room2/portal_symbol": load("room2/portal_symbol.png"),
+    "room2/portal_symbol_slime": load("room2/portal_symbol_slime.png"),
+    "room2/book0": load("room2/book0.png"),
+    "room2/book1": load("room2/book1.png"),
+    "room2/book2": load("room2/book2.png"),
+    "room2/light00": load("room2/light00.png"),
+    "room2/light01": load("room2/light01.png"),
+    "room2/light02": load("room2/light02.png"),
+    "room2/light03": load("room2/light03.png"),
+    "room2/light04": load("room2/light04.png"),
+    "room2/light05": load("room2/light05.png"),
+    "room2/light06": load("room2/light06.png"),
+    "room2/light07": load("room2/light07.png"),
+    "room2/light08": load("room2/light08.png"),
+    "room2/light09": load("room2/light09.png"),
+    "room2/light10": load("room2/light10.png"),
+    "room2/light11": load("room2/light11.png"),
+    "room2/light12": load("room2/light12.png"),
+    "room2/light13": load("room2/light13.png"),
+    "room2/light14": load("room2/light14.png"),
+    "room2/light15": load("room2/light15.png"),
+    "room2/drop0": load("room2/drop0.png"),
+    "room2/drop1": load("room2/drop1.png"),
+    "room2/drop2": load("room2/drop2.png"),
+    "room2/drop3": load("room2/drop3.png"),
+    "room2/drop4": load("room2/drop4.png"),
+    "room2/drop5": load("room2/drop5.png"),
+    "room2/drop6": load("room2/drop6.png"),
     # Room 3
-    "room3/platform":load("room3/platform.png")
+    "room3/platform": load("room3/platform.png")
 }
 
 # Loading dialogue images
 dialogue = {
-    "mysteriousbox":load("dialogue/mysteriousbox.png"),
-    "vincentbox":load("dialogue/vincentbox.png"),
-    "zaalbox":load("dialogue/zaalbox.png"),
-    "mysterious0":load("dialogue/mysterious0.png"),
-    "mysterious1":load("dialogue/mysterious1.png"),
-    "mysterious2":load("dialogue/mysterious2.png"),
-    "mysterious3":load("dialogue/mysterious3.png"),
-    "vincent0":load("dialogue/vincent0.png"),
-    "vincent1":load("dialogue/vincent1.png"),
-    "vincent2":load("dialogue/vincent2.png"),
-    "vincent3":load("dialogue/vincent3.png"),
-    "vincent4":load("dialogue/vincent4.png"),
-    "vincent5":load("dialogue/vincent5.png"),
-    "vincent6":load("dialogue/vincent6.png"),
-    "vincent7":load("dialogue/vincent7.png"),
-    "vincent8":load("dialogue/vincent8.png"),
-    "zaal0":load("dialogue/zaal0.png"),
-    "zaal1":load("dialogue/zaal1.png"),
-    "zaal2":load("dialogue/zaal2.png"),
-    "zaal3":load("dialogue/zaal3.png"),
-    "zaal4":load("dialogue/zaal4.png"),
+    "mysteriousbox": load("dialogue/mysteriousbox.png"),
+    "vincentbox": load("dialogue/vincentbox.png"),
+    "zaalbox": load("dialogue/zaalbox.png"),
+    "mysterious0": load("dialogue/mysterious0.png"),
+    "mysterious1": load("dialogue/mysterious1.png"),
+    "mysterious2": load("dialogue/mysterious2.png"),
+    "mysterious3": load("dialogue/mysterious3.png"),
+    "vincent0": load("dialogue/vincent0.png"),
+    "vincent1": load("dialogue/vincent1.png"),
+    "vincent2": load("dialogue/vincent2.png"),
+    "vincent3": load("dialogue/vincent3.png"),
+    "vincent4": load("dialogue/vincent4.png"),
+    "vincent5": load("dialogue/vincent5.png"),
+    "vincent6": load("dialogue/vincent6.png"),
+    "vincent7": load("dialogue/vincent7.png"),
+    "vincent8": load("dialogue/vincent8.png"),
+    "zaal0": load("dialogue/zaal0.png"),
+    "zaal1": load("dialogue/zaal1.png"),
+    "zaal2": load("dialogue/zaal2.png"),
+    "zaal3": load("dialogue/zaal3.png"),
+    "zaal4": load("dialogue/zaal4.png"),
 }
 
 # Loading ability images
 ability_images = {
-    "firebolt":
-        {"Vincent Slime":
-            {
-                "left":[load("vincent/slime/firebolt/left" + str(n) + ".png") for n in range(12)],
-                    "up":[load("vincent/slime/firebolt/up" + str(n) + ".png") for n in range(12)],
-                        "right":[load("vincent/slime/firebolt/right" + str(n) + ".png") for n in range(12)],
-                            "down":[load("vincent/slime/firebolt/down" + str(n) + ".png") for n in range(12)]
-            }
+    "firebolt": {
+        "Vincent Slime": {
+            "left": [load("vincent/slime/firebolt/left" + str(n) + ".png") for n in range(12)],
+            "up": [load("vincent/slime/firebolt/up" + str(n) + ".png") for n in range(12)],
+            "right": [load("vincent/slime/firebolt/right" + str(n) + ".png") for n in range(12)],
+            "down": [load("vincent/slime/firebolt/down" + str(n) + ".png") for n in range(12)]
         }
+    }
 }
 
 # Loading death images
 death_images = {
-    "Vincent Slime":[load("vincent/slime/death" + str(n) + ".png") for n in range(12)],
-        "Enemy Slime":[load("enemy/slime/death" + str(n) + ".png") for n in range(10)],
-            "Firebolt":[{direction:load("firebolt/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(8)],
-                "Inferno":[{direction:load("inferno/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(11)],
+    "Vincent Slime": [load("vincent/slime/death" + str(n) + ".png") for n in range(12)],
+    "Enemy Slime": [load("enemy/slime/death" + str(n) + ".png") for n in range(10)],
+    "Firebolt": [{direction: load("firebolt/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(8)],
+    "Inferno": [{direction: load("inferno/death/" + direction + str(n) + ".png") for direction in ["left", "up", "right", "down"]} for n in range(11)],
 }
 
 # Loading tutorial images
@@ -1209,20 +1205,20 @@ tutorial = [load("tutorial/tutorial" + str(n) + ".png") for n in range(13)]
 
 # Loading spellbook images
 spellbook_images = {
-    "spellbook_default":load("spellbook/spellbook_default.png"),
-    "firebolt_uncharged":load("spellbook/firebolt_uncharged.png"),
-    "firebolt1":load("spellbook/firebolt1.png")
+    "spellbook_default": load("spellbook/spellbook_default.png"),
+    "firebolt_uncharged": load("spellbook/firebolt_uncharged.png"),
+    "firebolt1": load("spellbook/firebolt1.png")
     }
 
 # Loading hud images
 hud_images = {
-    "hud":load("hud/hud.png"),
-    "health_orb":load("hud/health_orb.png"),
-    "expbar":load("hud/expbar.png"),
-    "expback":load("hud/expback.png"),
-    "firebolt":load("hud/firebolt.png"),
-    "firebolt_cooldown":load("hud/firebolt_cooldown.png"),
-    "slime_chunk":load("hud/slime_chunk.png")
+    "hud": load("hud/hud.png"),
+    "health_orb": load("hud/health_orb.png"),
+    "expbar": load("hud/expbar.png"),
+    "expback": load("hud/expback.png"),
+    "firebolt": load("hud/firebolt.png"),
+    "firebolt_cooldown": load("hud/firebolt_cooldown.png"),
+    "slime_chunk": load("hud/slime_chunk.png")
 }
 
 # Loading level up images
@@ -1230,14 +1226,12 @@ levelup_images = [load("levelup/" + str(n) + ".png") for n in range(15)]
 
 # Loading zaal images
 zaal_images = {
-    "health_back":load("zaal/health_back.png"),
-    "health":load("zaal/health.png"),
-    "health_icon":load("zaal/health_icon.png"),
-    "death":[load("zaal/death" + str(n) + ".png") for n in range(12)],
-        "zaal":[load("zaal/zaal" + str(n) + ".png") for n in range(2)],
-            "attack":[load("zaal/attack" + str(n) + ".png") for n in range(19)]
-
-
+    "health_back": load("zaal/health_back.png"),
+    "health": load("zaal/health.png"),
+    "health_icon": load("zaal/health_icon.png"),
+    "death": [load("zaal/death" + str(n) + ".png") for n in range(12)],
+    "zaal": [load("zaal/zaal" + str(n) + ".png") for n in range(2)],
+    "attack": [load("zaal/attack" + str(n) + ".png") for n in range(19)]
 }
 
 credits_images = [load("credits/credits" + str(n) + ".png").convert() for n in range(8)]
@@ -1259,18 +1253,18 @@ loot = Loot()
 spells = [] # The characters unlocked spells
 inventory = [] # The characters inventory
 number_drops = []   # The list of current number drops
-menus = {"main menu":Menu("main", ["title"],
-                          [["play"], ["options"], ["controls"], ["exit"]],
-                          [(620, 605, 1300, 648), (620, 663, 1300, 706), (620, 717, 1300, 760), (620, 774, 1300, 817)],
-                          ["saves menu", "options menu", "controls", "exit"], "sure quit?"),
-         "options menu":Menu("options", ["headings", "apply reset", "sliders"],
-                             [["SLIDER278"], ["SLIDER335"], ["SLIDER392"], ["SLIDER449"], ["windowed", "borderless", "fullscreen"],
-                                ["800x600", "1024x768", "1152x864", "1280x720", "1280x768", "1280x1024", "1366x768", "1600x900", "1600x1024", "1680x1050", "1920x1080"],
-                                ["SLIDER669"], ["subs_on", "subs_off"], ["damage_on", "damage_off"], ["apply", "reset"]],
-                             [(123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123)],
-                             ["options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu"],
-                             "main menu", [50, 100, 100, 100, 1, 10, 100, 0, 0, 0]),
-         "saves menu":Menu("saves", [],
+menus = {"main menu": Menu("main", ["title"],
+                           [["play"], ["options"], ["controls"], ["exit"]],
+                           [(620, 605, 1300, 648), (620, 663, 1300, 706), (620, 717, 1300, 760), (620, 774, 1300, 817)],
+                           ["saves menu", "options menu", "controls", "exit"], "sure quit?"),
+         "options menu": Menu("options", ["headings", "apply reset", "sliders"],
+                              [["SLIDER278"], ["SLIDER335"], ["SLIDER392"], ["SLIDER449"], ["windowed", "borderless", "fullscreen"],
+                               ["800x600", "1024x768", "1152x864", "1280x720", "1280x768", "1280x1024", "1366x768", "1600x900", "1600x1024", "1680x1050", "1920x1080"],
+                               ["SLIDER669"], ["subs_on", "subs_off"], ["damage_on", "damage_off"], ["apply", "reset"]],
+                              [(123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123), (123, 123, 123, 123)],
+                              ["options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu", "options menu"],
+                              "main menu", [50, 100, 100, 100, 1, 10, 100, 0, 0, 0]),
+         "saves menu": Menu("saves", [],
                             [["slot0"], ["slot1"], ["slot2"], ["slot3"]],
                             [(525, 255, 1413, 386), (525, 433, 1413, 564), (525, 611, 1413, 742), (525, 789, 1413, 920)],
                             ["save0", "save1", "save2", "save3"], "main menu")}
@@ -1293,7 +1287,7 @@ rooms = [
           Extra("room0/back", "below", 0, 0),
           portal,
           Extra("room0/front", "above", 0, 62)],
-         (70,70), 420, 420, 450, 330, [(7,5)],
+         (70, 70), 420, 420, 450, 330, [(7, 5)],
          [Exit(Coordinates(6, -1), "up", 1, Coordinates(11, 14)),
           Exit(Coordinates(7, -1), "up", 1, Coordinates(12, 14)),
           Exit(Coordinates(8, -1), "up", 1, Coordinates(13, 14))]),
@@ -1304,7 +1298,7 @@ rooms = [
           Extra("room1/bottom80", "above", 0, 1051, start_x=0, end_x=10, start_y=12, end_y=14),
           Extra("room1/bottom80", "above", 0, 1051, start_x=14, end_x=24, start_y=12, end_y=14),
           Extra("room1/sides", "above", 0, 0)],
-         (70,70), 70, 280, 100, 50, [],
+         (70, 70), 70, 280, 100, 50, [],
          [Exit(Coordinates(11, 15), "down", 0, Coordinates(6, 0)),
           Exit(Coordinates(12, 15), "down", 0, Coordinates(7, 0)),
           Exit(Coordinates(13, 15), "down", 0, Coordinates(8, 0)),
@@ -1361,40 +1355,40 @@ rooms = [
           Extra("room2/bottom_wall", "above", 0, 2183, start_x=45, end_x=47, start_y=28, end_y=32),
           Extra("room2/bottom_wall80", "above", 0, 2183, start_x=0, end_x=44, start_y=28, end_y=32),
           Extra("room2/bottom_wall80", "above", 0, 2183, start_x=48, end_x=107, start_y=28, end_y=32)],
-         (70,70), 70, 420, 50, 20,
-         [(22,0), (85,0)]
-         + [(x,1) for x in range(22,86)]
-         + [(22,2), (23,2)]
-         + [(x,5) for x in range(16,21)]
-         + [(x,6) for x in range(21,31)]
-         + [(x,6) for x in range(60,86)]
-         + [(87+s,5+s) for s in range(5)]
-         + [(86,5), (30,7), (30,8), (60,7), (60,8)]
-         + [(x,9) for x in range(31,45)]
-         + [(x,9) for x in range(48,60)]
-         + [(16,y) for y in range(6,13)]
-         + [(44,y) for y in range(10,15)]
-         + [(48,y) for y in range(10,15)]
-         + [(90,y) for y in range(10,19)]
-         + [(x,13) for x in range(5)]
-         + [(x,13) for x in range(8,16)]
-         + [(4,14), (3,15), (3,16), (3,17), (2,17)]
-         + [(15,y) for y in range(14,19)]
-         + [(x,18) for x in range(16,22)]
-         + [(x,19) for x in range(22,35)]
-         + [(x,19) for x in range(91,104)]
-         + [(105,19), (106,19), (107,19), (103,20),
-            (105,20), (105,21), (105,22), (104,22),
-            (100,20), (100,21), (99,21), (98,21),
-            (97,22), (97,23), (97,24)]
-         + [(96,y) for y in range(25,33)]
-         + [(x,30) for x in range(12)]
-         + [(x,30) for x in range(13,28)]
-         + [(14,31), (13,32), (25,31), (25,32)]
-         + [(35,y) for y in range(16,33)]
-         + [(57,y) for y in range(16,33)]
-         + [(x,15) for x in range(36,45)]
-         + [(x,15) for x in range(48,57)],
+         (70, 70), 70, 420, 50, 20,
+         [(22, 0), (85, 0)]
+         + [(x, 1) for x in range(22, 86)]
+         + [(22, 2), (23, 2)]
+         + [(x, 5) for x in range(16, 21)]
+         + [(x, 6) for x in range(21, 31)]
+         + [(x, 6) for x in range(60, 86)]
+         + [(87+s, 5+s) for s in range(5)]
+         + [(86, 5), (30, 7), (30, 8), (60, 7), (60, 8)]
+         + [(x, 9) for x in range(31, 45)]
+         + [(x, 9) for x in range(48, 60)]
+         + [(16,y) for y in range(6, 13)]
+         + [(44,y) for y in range(10, 15)]
+         + [(48,y) for y in range(10, 15)]
+         + [(90,y) for y in range(10, 19)]
+         + [(x, 13) for x in range(5)]
+         + [(x, 13) for x in range(8, 16)]
+         + [(4, 14), (3, 15), (3, 16), (3, 17), (2, 17)]
+         + [(15,y) for y in range(14, 19)]
+         + [(x, 18) for x in range(16, 22)]
+         + [(x, 19) for x in range(22, 35)]
+         + [(x, 19) for x in range(91, 104)]
+         + [(105, 19), (106, 19), (107, 19), (103, 20),
+            (105, 20), (105, 21), (105, 22), (104, 22),
+            (100, 20), (100, 21), (99, 21), (98, 21),
+            (97, 22), (97, 23), (97, 24)]
+         + [(96,y) for y in range(25, 33)]
+         + [(x, 30) for x in range(12)]
+         + [(x, 30) for x in range(13, 28)]
+         + [(14, 31), (13, 32), (25, 31), (25, 32)]
+         + [(35,y) for y in range(16, 33)]
+         + [(57,y) for y in range(16, 33)]
+         + [(x, 15) for x in range(36, 45)]
+         + [(x, 15) for x in range(48, 57)],
          [Exit(Coordinates(45, 33), "down", 1, Coordinates(11, 0)),
           Exit(Coordinates(46, 33), "down", 1, Coordinates(12, 0)),
           Exit(Coordinates(47, 33), "down", 1, Coordinates(13, 0))]),
@@ -1402,10 +1396,10 @@ rooms = [
          [Extra("TESSELATEsharedroom/lava_back_glow0", "below", 0, 0, 0, 0, 5, 0.2),
           Extra("TESSELATEsharedroom/black_patches0", "below", 0, 0, 10, "x", 2, 1),
           Extra("room3/platform", "below", 0, 0)],
-         (70,70), 280, 140, 200, 210,
-         [(x,0) for x in range(6)]
-         + [(20,y) for y in range(6,10)]
-         + [(x,10) for x in range(16,20)],
+         (70, 70), 280, 140, 200, 210,
+         [(x, 0) for x in range(6)]
+         + [(20,y) for y in range(6, 10)]
+         + [(x, 10) for x in range(16, 20)],
          [])
     ]
 
@@ -1446,9 +1440,9 @@ while session.is_running:
             session.audio.voice_volume = menus["options menu"].settings[3]
                 
         elif current == "controls":
-            session.screen.blit(menus["main menu"].background, (0,0))
-            session.screen.blit(controls_page, (0,0))
-            session.screen.blit(esc_exit, (0,0))
+            session.screen.blit(menus["main menu"].background, (0, 0))
+            session.screen.blit(controls_page, (0, 0))
+            session.screen.blit(esc_exit, (0, 0))
             
             if session.keys.escape or session.keys.backspace:
                 current = "main menu"
@@ -1464,15 +1458,15 @@ while session.is_running:
                 vincent.change_image()
             if current[8] == "0":
                 if cutscene_time < 3:
-                    session.screen.fill((0,0,0))
+                    session.screen.fill((0, 0, 0))
                 elif cutscene_time < 5:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
                         session.audio.sound.play(AudioClip("portal.ogg", 0.1), loop=True)
-                    session.screen.fill((0,0,0))
+                    session.screen.fill((0, 0, 0))
                     portal.display(current_room, vincent)
-                    fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-3))))
-                    session.screen.blit(fade_screen, (0,0))
+                    fade_screen.fill((255, 255, 255, 255*(1-0.5*(cutscene_time-3))))
+                    session.screen.blit(fade_screen, (0, 0))
                 elif cutscene_time < 10:
                     portal.display(current_room, vincent)
                     if not display_dialogue("vincent", 0):
@@ -1481,15 +1475,15 @@ while session.is_running:
                     if len(session.audio.sound.currently_playing) < 2:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
                     current_room.display_room(vincent)
-                    fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time-10))))
-                    session.screen.blit(fade_screen, (0,0))
+                    fade_screen.fill((255, 255, 255, 255*(1-0.5*(cutscene_time-10))))
+                    session.screen.blit(fade_screen, (0, 0))
                 elif cutscene_time < 17:
                     current_room.display_room(vincent)
                     if not display_dialogue("vincent", 1):
                         cutscene_start_time = session.uptime - 17
                 elif cutscene_time < 10017:
                     current_room.display_room(vincent)
-                    session.screen.blit(tutorial[0], (0,0))
+                    session.screen.blit(tutorial[0], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10017
                 else:
@@ -1532,16 +1526,16 @@ while session.is_running:
                     flux.display(current_room, vincent)                    
                     current_room.extras[5].display(current_room, vincent)
                     fade_screen.fill((151, 0, 0, int(255*((1/1.3)*(cutscene_time-62.4)))))
-                    session.screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0, 0))
                 elif cutscene_time < 64:
-                    session.screen.fill((151,0,0))
+                    session.screen.fill((151, 0, 0))
                     if vincent.form == "human":
                         vincent.transform()
                 elif cutscene_time < 66:
                     session.screen.blit(vincent.image, (vincent.x,vincent.y))                    
                     current_room.extras[5].display(current_room, vincent)
                     fade_screen.fill((151, 0, 0, int(255*(1-0.5*(cutscene_time-64)))))
-                    session.screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0, 0))
                 elif cutscene_time < 76:
                     if not display_dialogue("mysterious", 0):
                         cutscene_start_time = session.uptime - 76
@@ -1570,10 +1564,10 @@ while session.is_running:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
                         current_room.extras.append(book_item)
                         current_room.extras.append(book_light)
-                    fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
-                    session.screen.blit(fade_screen, (0,0))
+                    fade_screen.fill((255, 255, 255, 255*(1-0.5*(cutscene_time))))
+                    session.screen.blit(fade_screen, (0, 0))
                 elif cutscene_time < 10002:
-                    session.screen.blit(tutorial[1], (0,0))
+                    session.screen.blit(tutorial[1], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10002
                 else:
@@ -1584,7 +1578,7 @@ while session.is_running:
                 current_room.display_room(vincent)
                 if cutscene_time < 10000:
                     display_spellbook()
-                    session.screen.blit(tutorial[2], (0,0))
+                    session.screen.blit(tutorial[2], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10000
                 elif cutscene_time < 20000:
@@ -1594,29 +1588,29 @@ while session.is_running:
                     if session.keys.escape or session.keys.backspace:
                         cutscene_start_time = session.uptime - 20000
                 elif cutscene_time < 30000:
-                    session.screen.blit(tutorial[3], (0,0))
+                    session.screen.blit(tutorial[3], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 30000
                 elif cutscene_time < 40000:
-                    session.screen.blit(tutorial[4], (0,0))
+                    session.screen.blit(tutorial[4], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 40000
                 elif cutscene_time < 50000:
-                    session.screen.blit(tutorial[5], (0,0))
+                    session.screen.blit(tutorial[5], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 50000
                 elif cutscene_time < 60000:
-                    session.screen.blit(tutorial[6], (0,0))
+                    session.screen.blit(tutorial[6], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 60000
                 elif cutscene_time < 70000:
-                    session.screen.blit(tutorial[7], (0,0))
+                    session.screen.blit(tutorial[7], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 70000
                 elif cutscene_time < 80000:
                     display_hud()                    
                     session.screen.blit(hud_images["firebolt"], (760, 1029))
-                    session.screen.blit(tutorial[8], (0,0))
+                    session.screen.blit(tutorial[8], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 80000
                 else:
@@ -1634,7 +1628,7 @@ while session.is_running:
                     if not display_dialogue("vincent", 6):
                         cutscene_start_time = session.uptime - 25
                 elif cutscene_time < 10025:
-                    session.screen.blit(tutorial[9], (0,0))
+                    session.screen.blit(tutorial[9], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10025
                 else:
@@ -1649,7 +1643,7 @@ while session.is_running:
             elif current[8] == "5":
                 current_room.display_room(vincent)
                 if cutscene_time < 10000:
-                    session.screen.blit(tutorial[10], (0,0))
+                    session.screen.blit(tutorial[10], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10000
                 else:
@@ -1675,8 +1669,8 @@ while session.is_running:
                         current_room.exits.append(Exit(Coordinates(portal_x, portal_y), "up", 3, Coordinates(5, 5)))
                         current_room.exits.append(Exit(Coordinates(portal_x, portal_y), "right", 3, Coordinates(5, 5)))
                         current_room.exits.append(Exit(Coordinates(portal_x, portal_y), "down", 3, Coordinates(5, 5)))
-                    fade_screen.fill((255,255,255,255*(1-0.5*cutscene_time)))
-                    session.screen.blit(fade_screen, (0,0))
+                    fade_screen.fill((255, 255, 255, 255*(1-0.5*cutscene_time)))
+                    session.screen.blit(fade_screen, (0, 0))
                 else:
                     cutscene7_played = True
                     current = "in game"
@@ -1688,7 +1682,7 @@ while session.is_running:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
                     fade_screen.fill((255, 255, 255, int(255*(1-0.5*cutscene_time))))
-                    session.screen.blit(fade_screen, (0,0))
+                    session.screen.blit(fade_screen, (0, 0))
                 elif cutscene_time < 10:                    
                     if not display_dialogue("vincent", 1):
                         cutscene_start_time = session.uptime - 10
@@ -1724,8 +1718,8 @@ while session.is_running:
                 if cutscene_time < 2:
                     if not session.audio.sound.is_playing:
                         session.audio.sound.play(AudioClip("thunder.ogg"))
-                    fade_screen.fill((255,255,255,255*(1-0.5*(cutscene_time))))
-                    session.screen.blit(fade_screen, (0,0))
+                    fade_screen.fill((255, 255, 255, 255*(1-0.5*(cutscene_time))))
+                    session.screen.blit(fade_screen, (0, 0))
                 else:
                     current = "credits"
             
@@ -1736,69 +1730,69 @@ while session.is_running:
                 session.screen.blit(zaal_images["death"][int(cutscene_time*session.fps)], (current_room.x + 840, current_room.y + 71))
             elif cutscene_time < 5:
                 current_room.display_room(vincent)
-                fade_screen.fill((0,0,0,51*cutscene_time))
-                session.screen.blit(fade_screen, (0,0))
+                fade_screen.fill((0, 0, 0, 51*cutscene_time))
+                session.screen.blit(fade_screen, (0, 0))
             else:
-                session.screen.blit(credits_images[7], (0,0))
+                session.screen.blit(credits_images[7], (0, 0))
                 if cutscene_time < 7:
                     credits_images[0].set_alpha(127.5*(cutscene_time-5))
-                    session.screen.blit(credits_images[0], (0,0))
+                    session.screen.blit(credits_images[0], (0, 0))
                 elif cutscene_time < 10:
-                    session.screen.blit(credits_images[0], (0,0))
+                    session.screen.blit(credits_images[0], (0, 0))
                 elif cutscene_time < 12:
                     credits_images[0].set_alpha(255*(1-0.5*(cutscene_time-10)))
-                    session.screen.blit(credits_images[0], (0,0))
+                    session.screen.blit(credits_images[0], (0, 0))
                     
                 elif cutscene_time < 14:
                     credits_images[1].set_alpha(127.5*(cutscene_time-12))
-                    session.screen.blit(credits_images[1], (0,0))
+                    session.screen.blit(credits_images[1], (0, 0))
                 elif cutscene_time < 17:
-                    session.screen.blit(credits_images[1], (0,0))
+                    session.screen.blit(credits_images[1], (0, 0))
                 elif cutscene_time < 19:
                     credits_images[1].set_alpha(255*(1-0.5*(cutscene_time-17)))
-                    session.screen.blit(credits_images[1], (0,0))
+                    session.screen.blit(credits_images[1], (0, 0))
                     
                 elif cutscene_time < 21:
                     credits_images[2].set_alpha(127.5*(cutscene_time-19))
-                    session.screen.blit(credits_images[2], (0,0))
+                    session.screen.blit(credits_images[2], (0, 0))
                 elif cutscene_time < 24:
-                    session.screen.blit(credits_images[2], (0,0))
+                    session.screen.blit(credits_images[2], (0, 0))
                 elif cutscene_time < 26:
                     credits_images[2].set_alpha(255*(1-0.5*(cutscene_time-24)))
-                    session.screen.blit(credits_images[2], (0,0))
+                    session.screen.blit(credits_images[2], (0, 0))
                     
                 elif cutscene_time < 28:
                     credits_images[3].set_alpha(127.5*(cutscene_time-26))
-                    session.screen.blit(credits_images[3], (0,0))
+                    session.screen.blit(credits_images[3], (0, 0))
                 elif cutscene_time < 31:
-                    session.screen.blit(credits_images[3], (0,0))
+                    session.screen.blit(credits_images[3], (0, 0))
                 elif cutscene_time < 33:
                     credits_images[3].set_alpha(255*(1-0.5*(cutscene_time-31)))
-                    session.screen.blit(credits_images[3], (0,0))
+                    session.screen.blit(credits_images[3], (0, 0))
                     
                 elif cutscene_time < 35:
                     credits_images[4].set_alpha(127.5*(cutscene_time-33))
-                    session.screen.blit(credits_images[4], (0,0))
+                    session.screen.blit(credits_images[4], (0, 0))
                 elif cutscene_time < 38:
-                    session.screen.blit(credits_images[4], (0,0))
+                    session.screen.blit(credits_images[4], (0, 0))
                 elif cutscene_time < 40:
                     credits_images[4].set_alpha(255*(1-0.5*(cutscene_time-38)))
-                    session.screen.blit(credits_images[4], (0,0))
+                    session.screen.blit(credits_images[4], (0, 0))
                     
                 elif cutscene_time < 42:
                     credits_images[5].set_alpha(127.5*(cutscene_time-40))
-                    session.screen.blit(credits_images[5], (0,0))
+                    session.screen.blit(credits_images[5], (0, 0))
                 elif cutscene_time < 45:
-                    session.screen.blit(credits_images[5], (0,0))
+                    session.screen.blit(credits_images[5], (0, 0))
                 elif cutscene_time < 47:
                     credits_images[5].set_alpha(255*(1-0.5*(cutscene_time-45)))
-                    session.screen.blit(credits_images[5], (0,0))
+                    session.screen.blit(credits_images[5], (0, 0))
                     
                 elif cutscene_time < 49:
                     credits_images[6].set_alpha(127.5*(cutscene_time-47))
-                    session.screen.blit(credits_images[6], (0,0))
+                    session.screen.blit(credits_images[6], (0, 0))
                 else:
-                    session.screen.blit(credits_images[6], (0,0))
+                    session.screen.blit(credits_images[6], (0, 0))
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         session.audio.stop()
                         current = "main menu"   #(maybe), prolly go to credits isnt it
@@ -1807,8 +1801,8 @@ while session.is_running:
             cutscene_time = session.uptime - cutscene_start_time
             if cutscene_time < 5:
                 current_room.display_room(vincent)
-                fade_screen.fill((0,0,0,51*cutscene_time))
-                session.screen.blit(fade_screen, (0,0))
+                fade_screen.fill((0, 0, 0, 51*cutscene_time))
+                session.screen.blit(fade_screen, (0, 0))
             else:
                 current = "saves menu"             
                     
@@ -1854,7 +1848,7 @@ while session.is_running:
                 current_room.display_room(vincent)
 
                 if current_room.number == 3 and not cutscene8_played:
-                    session.screen.fill((0,0,0))
+                    session.screen.fill((0, 0, 0))
 
                 if current_room.number == 3 and cutscene8_played and vincent.alive:
                     inferno.exist(current_room)
@@ -1866,10 +1860,10 @@ while session.is_running:
                     else:
                         session.screen.blit(zaal_images["zaal"][(frame%6)//3], (current_room.x + 840, current_room.y + 71))
                     session.screen.blit(zaal_images["health_back"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)))
-                    session.screen.blit(zaal_images["health"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)), (0,0,zaal_life,52))
-                    session.screen.blit(zaal_images["health_icon"], (1786,0))
+                    session.screen.blit(zaal_images["health"], (69*(screen_width/1920.0), 80*(screen_height/1080.0)), (0, 0,zaal_life, 52))
+                    session.screen.blit(zaal_images["health_icon"], (1786, 0))
 
-                    if firebolt.position in [(10,2), (11,2), (12,2), (10,3), (11,3), (12,3)] and firebolt.alive:
+                    if firebolt.position in [(10, 2), (11, 2), (12, 2), (10, 3), (11, 3), (12, 3)] and firebolt.alive:
                         damage_dealt = int(firebolt.damage*(0.9 + 0.2*random.random()))
                         zaal_life -= damage_dealt
                         number_drop("damage", firebolt, damage_dealt)
@@ -1903,12 +1897,12 @@ while session.is_running:
                 if show_spellbook:
                     display_spellbook()
                     if session.mouse.is_in(748, 499, 825, 576):
-                        session.screen.blit(tutorial[12], (0,0))
+                        session.screen.blit(tutorial[12], (0, 0))
                         if session.mouse.left and cutscene5_played and not cutscene6_played and vincent.skill_points > 0:
                             vincent.skill_points -= 1
                             cutscene6_played = True
                     elif session.mouse.is_in(579, 428, 656, 505):
-                        session.screen.blit(tutorial[11], (0,0))
+                        session.screen.blit(tutorial[11], (0, 0))
                     if session.keys.escape or session.keys.backspace:
                         show_spellbook = False
 
@@ -1920,11 +1914,11 @@ while session.is_running:
 
                 if levelling_up:
                     if levelup_frame < 22:
-                        session.screen.blit(levelup_images[levelup_frame//2], (0,0))
+                        session.screen.blit(levelup_images[levelup_frame//2], (0, 0))
                     elif levelup_frame < 52:
-                        session.screen.blit(levelup_images[11], (0,0))
+                        session.screen.blit(levelup_images[11], (0, 0))
                     elif levelup_frame < 58:
-                        session.screen.blit(levelup_images[(levelup_frame-28)//2], (0,0))
+                        session.screen.blit(levelup_images[(levelup_frame-28)//2], (0, 0))
                     else:
                         levelup_frame = 0
                         levelling_up = False
@@ -1976,22 +1970,22 @@ while session.is_running:
                     firebolt.use(vincent)
 
                 if session.keys.r and cutscene4_played and not slime_portal in rooms[2].extras:  # Creating a portal
-                    if vincent.orientation == "left" and not (vincent.position.x-1, vincent.position.y) in (current_room.blocked + [(104,25)]) and not vincent.position.x-1 < 0:
+                    if vincent.orientation == "left" and not (vincent.position.x-1, vincent.position.y) in (current_room.blocked + [(104, 25)]) and not vincent.position.x-1 < 0:
                         portal_x = vincent.position.x-1
                         portal_y = vincent.position.y
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
-                    elif vincent.orientation == "up" and not (vincent.position.x, vincent.position.y-1) in (current_room.blocked + [(104,25)]) and not vincent.position.y-1 < 0:
+                    elif vincent.orientation == "up" and not (vincent.position.x, vincent.position.y-1) in (current_room.blocked + [(104, 25)]) and not vincent.position.y-1 < 0:
                         portal_y = vincent.position.y-1
                         portal_x = vincent.position.x
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
-                    elif vincent.orientation == "right" and not (vincent.position.x+1, vincent.position.y) in (current_room.blocked + [(104,25)]) and not vincent.position.x+1 > current_room.max_coord.x:
+                    elif vincent.orientation == "right" and not (vincent.position.x+1, vincent.position.y) in (current_room.blocked + [(104, 25)]) and not vincent.position.x+1 > current_room.max_coord.x:
                         portal_x = vincent.position.x+1
                         portal_y = vincent.position.y
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
                         placed_portal.y = current_room.grey_up + current_room.square_size[1]*portal_y - 28
-                    elif vincent.orientation == "down" and not (vincent.position.x, vincent.position.y+1) in (current_room.blocked + [(104,25)]) and not vincent.position.y+1 > current_room.max_coord.y:
+                    elif vincent.orientation == "down" and not (vincent.position.x, vincent.position.y+1) in (current_room.blocked + [(104, 25)]) and not vincent.position.y+1 > current_room.max_coord.y:
                         portal_y = vincent.position.y+1
                         portal_x = vincent.position.x
                         placed_portal.x = current_room.grey_left + current_room.square_size[0]*portal_x - 27
