@@ -18,6 +18,8 @@ from lib.session import Session
 from lib.audio import AudioClip
 from lib.surfaces import Image
 
+from lib.save import Save
+
 from lib.loot import Loot
 from lib.coordinates import Coordinates
 
@@ -31,15 +33,7 @@ levelling_up = False
 levelup_frame = 0
 movement_started = False
 
-cutscene0_played = False
-cutscene1_played = False
-cutscene2_played = False
-cutscene3_played = False
-cutscene4_played = False
-cutscene5_played = False
-cutscene6_played = False
-cutscene7_played = False
-cutscene8_played = False
+cutscene_played = [False for _cutscene in range(9)]
 
 coordinates_set = False
 portal_x = -10
@@ -149,7 +143,7 @@ def display_number_drop(number_drop_item):
 
 # Defining a function that displays the spellbook
 def display_spellbook():
-    if not cutscene6_played:
+    if not cutscene_played[6]:
         spellbook_images["spellbook_default"].display(0, 0)
     else:
         spellbook_images["firebolt1"].display(0, 0)
@@ -184,90 +178,8 @@ def display_dialogue(character, dialogue_number):
     dialogue[character + str(dialogue_number)].display(765, 895)
     return not (session.keys.space or session.keys.enter or session.keys.numpad_enter)
 
-# Defining a function to load a save file
-def load_game(savefile):
-    save = open("../saves/" + savefile + ".txt", "r")
-    current = save.readline()[:-1]
-    if current == "No save data":
-        save.close()
-        return
-    current_room = rooms[int(save.readline()[:-1])]
-    vincent.form = save.readline()[:-1]
-    cutscene0_played = bool(save.readline()[:-1])
-    cutscene1_played = bool(save.readline()[:-1])
-    cutscene2_played = bool(save.readline()[:-1])
-    cutscene3_played = bool(save.readline()[:-1])
-    cutscene4_played = bool(save.readline()[:-1])
-    cutscene5_played = bool(save.readline()[:-1])
-    cutscene6_played = bool(save.readline()[:-1])
-    cutscene7_played = bool(save.readline()[:-1])
-    cutscene8_played = bool(save.readline()[:-1])
-    vincent.position = Coordinates(int(save.readline()[:-1]), int(save.readline()[:-1]))
-    vincent.orientation = save.readline()[:-1]
-    vincent.room = int(save.readline()[:-1])
-    vincent.exp = int(save.readline()[:-1])
-    vincent.level = int(save.readline()[:-1])
-    vincent.skill_points = int(save.readline()[:-1])
-    vincent.max_life = int(save.readline()[:-1])
-    vincent.current_life = int(save.readline()[:-1])
-    for setting_value in menus["options menu"].settings:  # Reading in the saved options settings
-        setting_value = int(save.readline()[:-1])
-    globals().update(locals())  # Making all variables loaded global
 
-
-# Defining a function to save a save file
-def save_game(savefile):
-    save = open("../saves/save" + savefile + ".txt", "w")
-    save.write(current + "\n")
-    save.write(current_room.name[-1] + "\n")
-    save.write(vincent.form + "\n")
-    save.write(str(cutscene0_played) + "\n")
-    save.write(str(cutscene1_played) + "\n")
-    save.write(str(cutscene2_played) + "\n")
-    save.write(str(cutscene3_played) + "\n")
-    save.write(str(cutscene4_played) + "\n")
-    save.write(str(cutscene5_played) + "\n")
-    save.write(str(cutscene6_played) + "\n")
-    save.write(str(cutscene7_played) + "\n")
-    save.write(str(cutscene8_played) + "\n")
-    save.write(str(vincent.position.x) + "\n")
-    save.write(str(vincent.position.y) + "\n")
-    save.write(str(vincent.orientation) + "\n")
-    save.write(str(vincent.room) + "\n")
-    save.write(str(vincent.exp) + "\n")
-    save.write(str(vincent.level) + "\n")
-    save.write(str(vincent.skill_points) + "\n")
-    save.write(str(vincent.max_life) + "\n")
-    save.write(str(vincent.current_life) + "\n")
-    for setting_value in menus["options menu"].settings:  # Saving the players option settings
-        save.write(str(setting_value) + "\n")
-    save.close()
-
-
-# Defining a function to delete save files
-def deletesave(savefile):
-    line_number = 0
-    save = open("../saves/save" + savefile + ".txt", "r")
-    while True:
-        if save.readline() == "\n":
-            number_of_lines = line_number
-            break
-        else:
-            line_number += 1
-    save.close()
-
-    save = open("../saves/save" + savefile + ".txt", "w")
-    save.write("No save data\n")
-    for line in range(number_of_lines - 1):
-        save.write("\n")
-    save.close()
-
-
-### ---------- FUNCTION DEFINING - END ---------- ###
-
-
-### ---------- CLASS DEFINING - START ---------- ###
-
+# CLASS DEFINING -----------------------------------------------------------------------------------
 class Menu:
     def __init__(self, name, permanent, options, coordinates, actions, escape_action, settings=None):
         self.name = name
@@ -1393,8 +1305,12 @@ while session.is_running:
                 current = "main menu"
                 
         elif current[0:4] == "save":
-            save_number = current[4]
-            load_game(current)
+            save = Save(current[4])
+            if not save.is_empty:
+                current_room = rooms[save.room_number]
+                save.set_player_attributes(vincent)
+                cutscene_played = save.cutscene_played
+                menus["options menu"].settings = save.settings
             current = "in game"
         
         elif current[0:8] == "cutscene":
@@ -1432,7 +1348,7 @@ while session.is_running:
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10017
                 else:
-                    cutscene0_played = True
+                    cutscene_played[0] = True
                     current = "in game"
             
             elif current[8] == "1":
@@ -1499,7 +1415,7 @@ while session.is_running:
                 else:
                     session.audio.music.play(AudioClip("main.ogg", 0.5))
                     coordinates_set = False
-                    cutscene1_played = True
+                    cutscene_played[1] = True
                     current = "in game"
                 
             elif current[8] == "2":
@@ -1516,7 +1432,7 @@ while session.is_running:
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10002
                 else:
-                    cutscene2_played = True
+                    cutscene_played[2] = True
                     current = "in game"
             
             elif current[8] == "3":
@@ -1564,7 +1480,7 @@ while session.is_running:
                     show_hud = True
                     firebolt.unlocked = True
                     spells.append("firebolt")
-                    cutscene3_played = True
+                    cutscene_played[3] = True
                     current = "in game"
             
             elif current[8] == "4":
@@ -1581,7 +1497,7 @@ while session.is_running:
                     number_drop("exp", vincent, 35)
                     mean_slime.room = 2
                     mean_slime.moves = ["right" for n in range(100)] + ["down" for n in range(10)]
-                    cutscene4_played = True
+                    cutscene_played[4] = True
                     current_room.extras.append(placed_portal)
                     current = "in game"
             
@@ -1592,7 +1508,7 @@ while session.is_running:
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10000
                 else:
-                    cutscene5_played = True
+                    cutscene_played[5] = True
                     current = "in game"
             
             elif current[8] == "7":
@@ -1617,7 +1533,7 @@ while session.is_running:
                     fade_screen.fill((255, 255, 255, 255*(1-0.5*cutscene_time)))
                     session.screen.blit(fade_screen, (0, 0))
                 else:
-                    cutscene7_played = True
+                    cutscene_played[7] = True
                     current = "in game"
             
             elif current[8] == "8":
@@ -1655,7 +1571,7 @@ while session.is_running:
                 else:
                     session.audio.music.play(AudioClip("boss.ogg", 0.5))
                     firebolt.room = 3
-                    cutscene8_played = True
+                    cutscene_played[8] = True
                     current = "in game"
                     
             elif current[8] == "9":
@@ -1752,16 +1668,16 @@ while session.is_running:
                 current = "saves menu"             
                     
         elif current == "in game":
-            if not cutscene0_played:
+            if not cutscene_played[0]:
                 cutscene_start_time = session.uptime
                 current = "cutscene0"
-            elif not cutscene1_played and vincent.room == 1 and vincent.position.y < 7 and vincent.movement_cooldown == 0:
+            elif not cutscene_played[1] and vincent.room == 1 and vincent.position.y < 7 and vincent.movement_cooldown == 0:
                 cutscene_start_time = session.uptime
                 current = "cutscene1"
-            elif not cutscene2_played and vincent.room == 2 and vincent.position.y < 26 and vincent.movement_cooldown == 0:
+            elif not cutscene_played[2] and vincent.room == 2 and vincent.position.y < 26 and vincent.movement_cooldown == 0:
                 cutscene_start_time = session.uptime
                 current = "cutscene2"
-            elif not cutscene8_played and vincent.room == 3:
+            elif not cutscene_played[8] and vincent.room == 3:
                 cutscene_start_time = session.uptime
                 current = "cutscene8"
             else:
@@ -1792,10 +1708,10 @@ while session.is_running:
 
                 current_room.display_room(vincent)
 
-                if current_room.number == 3 and not cutscene8_played:
+                if current_room.number == 3 and not cutscene_played[8]:
                     session.screen.fill((0, 0, 0))
 
-                if current_room.number == 3 and cutscene8_played and vincent.alive:
+                if current_room.number == 3 and cutscene_played[8] and vincent.alive:
                     inferno.exist(current_room)
                     inferno.use(vincent)
                     inferno.cast(vincent)
@@ -1843,9 +1759,9 @@ while session.is_running:
                     display_spellbook()
                     if session.mouse.is_in(748, 499, 825, 576):
                         tutorial[12].display(0, 0)
-                        if session.mouse.left and cutscene5_played and not cutscene6_played and vincent.skill_points > 0:
+                        if session.mouse.left and cutscene_played[5] and not cutscene_played[6] and vincent.skill_points > 0:
                             vincent.skill_points -= 1
-                            cutscene6_played = True
+                            cutscene_played[6] = True
                     elif session.mouse.is_in(579, 428, 656, 505):
                         tutorial[11].display(0, 0)
                     if session.keys.escape or session.keys.backspace:
@@ -1869,7 +1785,7 @@ while session.is_running:
                         levelling_up = False
                     levelup_frame += 1
 
-                if not cutscene5_played and vincent.level == 2 and not levelling_up:
+                if not cutscene_played[5] and vincent.level == 2 and not levelling_up:
                     cutscene_start_time = session.uptime
                     current = "cutscene5"
 
@@ -1887,13 +1803,13 @@ while session.is_running:
                     show_spellbook = True
 
                 if session.keys.e:
-                    if not cutscene3_played:
+                    if not cutscene_played[3]:
                         if is_interactable(Coordinates(46, 20)):
                             current_room.extras.remove(book_item)
                             current_room.extras.remove(book_light)
                             cutscene_start_time = session.uptime
                             current = "cutscene3"
-                    elif not cutscene4_played:
+                    elif not cutscene_played[4]:
                         if is_interactable(Coordinates(104, 25)):
                             cutscene_start_time = session.uptime
                             current = "cutscene4"
@@ -1906,7 +1822,7 @@ while session.is_running:
                         slime_portal.x = placed_portal.x
                         slime_portal.y = placed_portal.y
 
-                if slime_portal in rooms[2].extras and firebolt.position == Coordinates(portal_x, portal_y) and firebolt.alive and not cutscene7_played:
+                if slime_portal in rooms[2].extras and firebolt.position == Coordinates(portal_x, portal_y) and firebolt.alive and not cutscene_played[7]:
                     firebolt.alive = False
                     cutscene_start_time = session.uptime
                     current = "cutscene7"
@@ -1914,7 +1830,7 @@ while session.is_running:
                 if session.keys.one or session.keys.numpad_one:
                     firebolt.use(vincent)
 
-                if session.keys.r and cutscene4_played and not slime_portal in rooms[2].extras:  # Creating a portal
+                if session.keys.r and cutscene_played[4] and not slime_portal in rooms[2].extras:  # Creating a portal
                     if vincent.orientation == "left" and not (vincent.position.x-1, vincent.position.y) in (current_room.blocked + [(104, 25)]) and not vincent.position.x-1 < 0:
                         portal_x = vincent.position.x-1
                         portal_y = vincent.position.y
@@ -1945,7 +1861,7 @@ while session.is_running:
 
 # Closing and saving the program
 try:
-    save_game(save_number)
+    save.save(current, current_room.number, cutscene_played, vincent, menus["options menu"].settings)
 except NameError:
     pass
 

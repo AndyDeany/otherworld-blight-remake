@@ -1,1 +1,41 @@
-{}
+{
+    "current": "cutscene0",
+    "room_number": 0,
+    "cutscene_played": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+    ],
+    "player": {
+        "form": "human",
+        "position": [
+            7,
+            7
+        ],
+        "orientation": "down",
+        "room": 0,
+        "exp": 0,
+        "level": 1,
+        "skill_points": 0,
+        "max_life": 1000,
+        "current_life": 1000
+    },
+    "settings": [
+        50,
+        100,
+        100,
+        100,
+        1,
+        10,
+        100,
+        0,
+        0,
+        0
+    ]
+}
