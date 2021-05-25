@@ -14,7 +14,6 @@ class Loot(Base):
         "loot3": Image("loot/loot3.png"),
         "loot4": Image("loot/loot4.png"),
         "loot5": Image("loot/loot5.png"),
-        "slime_chunk": Image("loot/slime_chunk.png"),
     }
 
     def __init__(self, *items):
@@ -34,7 +33,7 @@ class Loot(Base):
 
         for index, item in enumerate(self.items):
             if item is not None:
-                self.loot_images[item].display(781, 225 + 89*index)
+                item.loot_image.display(781, 225 + 89*index)
 
         self.loot_images["controls"].display(0, 0)
 

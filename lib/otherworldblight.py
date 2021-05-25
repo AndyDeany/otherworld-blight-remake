@@ -20,7 +20,9 @@ from lib.surfaces import Image
 
 from lib.save import Save
 
+from lib.hud import Hud
 from lib.loot import Loot
+from lib.item import Item
 from lib.coordinates import Coordinates
 
 
@@ -151,24 +153,6 @@ def display_spellbook():
     session.screen.blit(font.render(str(vincent.skill_points), True, (199, 189, 189)), (1665, 20))
     session.screen.blit(font.render(str(firebolt.level), True, (142, 0, 0)), (834, 239))
     esc_exit.display(0, 0)
-
-
-# Defining a function that displays the Heads-up Display (HUD)
-def display_hud():
-    hud_images["expback"].display(0, 0)
-    hud_images["expbar"].display(728, 951, area=(0, 0, (vincent.exp / 100.0) * 467, 130))
-    hud_images["hud"].display(0, 0)
-    hud_images["health_orb"].display(1025, 994 + (1 - (vincent.current_life/vincent.max_life)) * 87,
-                                     area=(0, (1 - (vincent.current_life/vincent.max_life)) * 87,
-                                           123, (vincent.current_life / vincent.max_life) * 87))
-
-    for index, spell in enumerate(spells):
-        if abilities[spell].cooldown > 0:
-            spell += "_cooldown"
-        hud_images[spell].display(760 + 51 * index, 1029)
-
-    for index, item in enumerate(inventory):
-        hud_images[item].display(964 + 51 * index, 1029)
 
 
 # Defining a function that displays dialogue boxes with the respective text
@@ -498,9 +482,9 @@ class Npc(Character):
               or goal[0] < 0 or goal[0] > room.max_coord.x or goal[1] < 0 or goal[1] > room.max_coord.y): # Ensuring that the algorithm isn't run to try to get to a place the npc cannot access.
             self.moves = []
         else:
-            class Square(object):
+            class Square(Coordinates):
                 def __init__(self, coordinates, parent=None):  # If no parent value (starting square)
-                    self.coordinates = coordinates  # Coordinates of the square
+                    super().__init__(*coordinates)
                     self.parent = parent            # Parent square; the square which the cell is adjacent to that it came from
                     self.min_distance = abs(coordinates.x - goal[0]) + abs(coordinates.y - goal[1])   # Direct route to goal from square, as if there were no walls
                     if self.parent is None:   # Setting the square's current distance to 0 if it is the starting square
@@ -521,48 +505,47 @@ class Npc(Character):
                 pending.remove(square)
 
                 adjacents = []   # A list of squares adjacent to the current square
-                if not square.coordinates.x == 0:
-                    adjacents.append(Square(square.coordinates.left, square))
-                if not square.coordinates.y == 0:
-                    adjacents.append(Square(square.coordinates.up, square))
-                if not square.coordinates.x == room.max_coord.x:
-                    adjacents.append(Square(square.coordinates.right, square))
-                if not square.coordinates.y == room.max_coord.y:
-                    adjacents.append(Square(square.coordinates.down, square))
+                if not square.x == 0:
+                    adjacents.append(Square(square.left, square))
+                if not square.y == 0:
+                    adjacents.append(Square(square.up, square))
+                if not square.x == room.max_coord.x:
+                    adjacents.append(Square(square.right, square))
+                if not square.y == room.max_coord.y:
+                    adjacents.append(Square(square.down, square))
 
                 for adjacent in adjacents:
-                    if adjacent.coordinates == goal:
+                    if adjacent == goal:
                         goal = adjacent
                         goal_reached = True # Showing that the goal has been reached
                         break
-                    elif (adjacent.coordinates in room.blocked
-                          or adjacent.coordinates in [cell.coordinates for cell in processed]):
+                    elif (adjacent in room.blocked
+                          or adjacent in [cell for cell in processed]):
                         pass    # Cell blocked, already processed or already queued to be processed
                     else:
                         pending.append(adjacent)
-                if goal_reached:    # If the goal has been found, the "else" statement will be skipped by breaking
+                if goal_reached:
                     break
 
             else:   # If the algorithm is unable to find a route to the goal, it will create a route to the closest square to the goal
                 closest_square = processed[0]   # Default VALID value
                 for square in processed:
-                    if (abs(square.coordinates.x - goal.coordinates.x) + abs(square.coordinates.y - goal.coordinates.y) <
-                        abs(closest_square.coordinates.x - goal.coordinates.x) + abs(closest_square.coordinates.y - goal.coordinates.y)):
+                    if (abs(square.x - goal.x) + abs(square.y - goal.y) < abs(closest_square.x - goal.x) + abs(closest_square.y - goal.y)):
                         closest_square = square
                 goal = closest_square
 
             # Compiling the route list
             route = []
             while True:
-                if goal.coordinates == self.position:
+                if goal == self.position:
                     break
-                elif goal.coordinates.x == goal.parent.coordinates.x - 1:
+                elif goal.x == goal.parent.x - 1:
                     route.append("left")
-                elif goal.coordinates.x == goal.parent.coordinates.x + 1:
+                elif goal.x == goal.parent.x + 1:
                     route.append("right")
-                elif goal.coordinates.y == goal.parent.coordinates.y - 1:
+                elif goal.y == goal.parent.y - 1:
                     route.append("up")
-                elif goal.coordinates.y == goal.parent.coordinates.y + 1:
+                elif goal.y == goal.parent.y + 1:
                     route.append("down")
                 goal = goal.parent
 
@@ -572,8 +555,9 @@ class Npc(Character):
 
 # The class for abilities           
 class Ability(Character):
-    def __init__(self, name, frames, position, orientation, movespeed, room, damage, max_cooldown, max_range, exp=0, max_life=1, current_life=1):
-        super(Ability, self).__init__(name, frames, position, orientation, movespeed, exp, room, max_life, current_life)
+    def __init__(self, name, frames, position, orientation, movespeed, room, damage, max_cooldown,
+                 max_range, exp=0, max_life=1, current_life=1, icon_image=None, icon_cooldown_image=None):    # TODO: don't give images default values.
+        super().__init__(name, frames, position, orientation, movespeed, exp, room, max_life, current_life)
         self.unlocked = False
         self.displayed = False
         self.damage = damage
@@ -582,6 +566,8 @@ class Ability(Character):
         self.max_range = max_range
         self.moves = []  # A list of pending moves to be made by the ability
         abilities[self.name.lower()] = self
+        self.icon_image = icon_image
+        self.icon_cooldown_image = icon_cooldown_image
         
     def use(self, player):
         global zaal_animation
@@ -1066,17 +1052,6 @@ spellbook_images = {
     "firebolt1": Image("spellbook/firebolt1.png")
     }
 
-# Loading hud images
-hud_images = {
-    "hud": Image("hud/hud.png"),
-    "health_orb": Image("hud/health_orb.png"),
-    "expbar": Image("hud/expbar.png"),
-    "expback": Image("hud/expback.png"),
-    "firebolt": Image("hud/firebolt.png"),
-    "firebolt_cooldown": Image("hud/firebolt_cooldown.png"),
-    "slime_chunk": Image("hud/slime_chunk.png")
-}
-
 # Loading level up images
 levelup_images = [Image("levelup/" + str(n) + ".png") for n in range(15)]
 
@@ -1108,6 +1083,8 @@ abilities = {}  # A dictionary of all currently loaded abilities
 loot = Loot()
 spells = [] # The characters unlocked spells
 inventory = [] # The characters inventory
+hud = Hud()
+slime_chunk = Item("Slime Chunk", Image("hud/slime_chunk.png"), Image("loot/slime_chunk.png"))
 number_drops = []   # The list of current number drops
 menus = {"main menu": Menu("main", ["title"],
                            [["play"], ["options"], ["controls"], ["exit"]],
@@ -1263,7 +1240,7 @@ rooms = [
 current_room = rooms[0]
 vincent = Player("Vincent Human", 4, Coordinates(7, 7), "down", 15, 0, 0, 1000, 1000)
 mean_slime = Npc("Enemy Slime", 6, Coordinates(0, 4), "right", 15, -1, 50, 80, 500, 500)
-firebolt = Ability("Firebolt", 6, Coordinates(0, 0), "right", 45, 2, 100, 2, 10)
+firebolt = Ability("Firebolt", 6, Coordinates(0, 0), "right", 45, 2, 100, 2, 10, icon_image=Image("hud/firebolt.png"), icon_cooldown_image=Image("hud/firebolt_cooldown.png"))
 inferno = Ability("Inferno", 12, Coordinates(0, 0), "down", 90, 3, 200, 2, 10)
 inferno.unlocked = True
 inferno.dead = True
@@ -1441,8 +1418,8 @@ while session.is_running:
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10000
                 elif cutscene_time < 20000:
-                    display_hud()
-                    hud_images["firebolt"].display(760, 1029)
+                    hud.display(spells, inventory, vincent)
+                    firebolt.icon_image.display(760, 1029)
                     display_spellbook()
                     if session.keys.escape or session.keys.backspace:
                         cutscene_start_time = session.uptime - 20000
@@ -1467,17 +1444,17 @@ while session.is_running:
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 70000
                 elif cutscene_time < 80000:
-                    display_hud()                    
-                    hud_images["firebolt"].display(760, 1029)
+                    hud.display(spells, inventory, vincent)
+                    firebolt.icon_image.display(760, 1029)
                     tutorial[8].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 80000
                 else:
-                    display_hud()
-                    hud_images["firebolt"].display(760, 1029)
+                    hud.display(spells, inventory, vincent)
+                    firebolt.icon_image.display(760, 1029)
                     show_hud = True
                     firebolt.unlocked = True
-                    spells.append("firebolt")
+                    spells.append(firebolt)
                     cutscene_played[3] = True
                     current = "in game"
             
@@ -1743,7 +1720,7 @@ while session.is_running:
                     current = "in game options menu"
 
                 if show_hud:
-                    display_hud()
+                    hud.display(spells, inventory, vincent)
 
                 # Showing number drops
                 for index in range(len(number_drops)):
@@ -1787,11 +1764,11 @@ while session.is_running:
                     cutscene_start_time = session.uptime
                     current = "cutscene5"
 
-                if mean_slime.dead and not drop in rooms[2].extras and not "slime_chunk" in inventory and not slime_portal in rooms[2].extras:
+                if mean_slime.dead and not drop in rooms[2].extras and slime_chunk not in inventory and not slime_portal in rooms[2].extras:
                     current_room.extras.append(drop)
                     drop.x = current_room.grey_left + current_room.square_size[0]*mean_slime.position.x - 180
                     drop.y = current_room.grey_up + current_room.square_size[1]*mean_slime.position.y - 130
-                    loot.items[0] = "slime_chunk"
+                    loot.items[0] = slime_chunk
 
                 if not loot and drop in current_room.extras:
                     current_room.extras.remove(drop)
@@ -1814,9 +1791,9 @@ while session.is_running:
                     elif drop in current_room.extras:
                         if is_interactable(mean_slime.position):
                             loot.is_displaying = True
-                    elif "slime_chunk" in inventory and is_interactable(Coordinates(portal_x, portal_y)):
+                    elif slime_chunk in inventory and is_interactable(Coordinates(portal_x, portal_y)):
                         current_room.extras.append(slime_portal)
-                        inventory.remove("slime_chunk")
+                        inventory.remove(slime_chunk)
                         slime_portal.x = placed_portal.x
                         slime_portal.y = placed_portal.y
 
