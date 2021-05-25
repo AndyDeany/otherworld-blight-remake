@@ -135,7 +135,6 @@ def number_drop(number_type, character, value):
 
 
 def display_number_drop(number_drop_item):
-    global number_drops
     session.screen.blit(dropfont.render(number_drop_item[3], True, number_drop_item[2]),
                         (number_drop_item[0], number_drop_item[1]))
     return number_drop_item[1] - 3
@@ -220,9 +219,8 @@ class Menu:
         
     # Changes the user's current selection in the menu
     def change_selection(self):
-        global movement_started
         for index in range(len(self.options)):
-            if session.mouse.is_in(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
+            if session.mouse.is_in(*self.coordinates[index]):
                 self.current_selection = index
                 return
 
@@ -238,7 +236,7 @@ class Menu:
                 self.original_x = session.mouse.x
                 slider_selected = False
                 for index in range(len(self.options)):
-                    if session.mouse.is_in(self.coordinates[index][0], self.coordinates[index][1], self.coordinates[index][2], self.coordinates[index][3]):
+                    if session.mouse.is_in(*self.coordinates[index]):
                         self.current_selection = index
                         if self.sliders[self.current_selection][0]:
                             slider_selected = True
@@ -1830,7 +1828,7 @@ while session.is_running:
                 if session.keys.one or session.keys.numpad_one:
                     firebolt.use(vincent)
 
-                if session.keys.r and cutscene_played[4] and not slime_portal in rooms[2].extras:  # Creating a portal
+                if session.keys.r and cutscene_played[4] and slime_portal not in rooms[2].extras:  # Creating a portal
                     if vincent.orientation == "left" and not (vincent.position.x-1, vincent.position.y) in (current_room.blocked + [(104, 25)]) and not vincent.position.x-1 < 0:
                         portal_x = vincent.position.x-1
                         portal_y = vincent.position.y
