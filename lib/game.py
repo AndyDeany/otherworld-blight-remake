@@ -1,3 +1,6 @@
+from lib.hud import Hud
+
+
 class Game:
     """Class representing the actual game - everything to do with gameplay functionality."""
 
@@ -5,3 +8,4 @@ class Game:
         """Create a Game instance."""
         self.session = session
         self.player = None
+        self.hud = Hud()

@@ -9,6 +9,10 @@ class Hud:
     EXP_BAR = Image("hud/expbar.png")
     EXP_BACK = Image("hud/expback.png", (0, 0))
 
+    def __init__(self):
+        """Create a Hud instance."""
+        self.is_unlocked = True
+
     def display(self, spells, inventory, player):
         """Display the HUD."""
         self.EXP_BACK.display()

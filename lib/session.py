@@ -7,7 +7,7 @@ from lib.base import Base
 from lib.keys import Keys
 from lib.mouse import Mouse
 from lib.audio import AudioController
-from lib.surfaces import Surface, Image
+from lib.surfaces import Image
 
 
 class Session:
@@ -30,7 +30,6 @@ class Session:
         self.game = Game(self)
 
         Base.initialise(self)
-        Surface.initialise(self)
 
     @property
     def icon(self):

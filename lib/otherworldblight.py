@@ -20,7 +20,6 @@ from lib.surfaces import Image
 
 from lib.save import Save
 
-from lib.hud import Hud
 from lib.loot import Loot
 from lib.item import Item
 from lib.coordinates import Coordinates
@@ -29,7 +28,6 @@ from lib.coordinates import Coordinates
 # VARIABLE ASSIGNMENT ------------------------------------------------------------------------------
 # Assigning essential game variables
 session = Session(screen)
-show_hud = False
 show_spellbook = False
 levelling_up = False
 levelup_frame = 0
@@ -1083,7 +1081,6 @@ abilities = {}  # A dictionary of all currently loaded abilities
 loot = Loot()
 spells = [] # The characters unlocked spells
 inventory = [] # The characters inventory
-hud = Hud()
 slime_chunk = Item("Slime Chunk", Image("hud/slime_chunk.png"), Image("loot/slime_chunk.png"))
 number_drops = []   # The list of current number drops
 menus = {"main menu": Menu("main", ["title"],
@@ -1412,7 +1409,7 @@ while session.is_running:
             
             elif current[8] == "3":
                 current_room.display_room(vincent)
-                hud.display(spells, inventory, vincent)
+                session.game.hud.display(spells, inventory, vincent)
                 if cutscene_time < 10000:
                     display_spellbook()
                     tutorial[2].display(0, 0)
@@ -1447,7 +1444,7 @@ while session.is_running:
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 80000
                 else:
-                    show_hud = True
+                    session.game.hud.is_unlocked = True
                     cutscene_played[3] = True
                     current = "in game"
             
@@ -1712,8 +1709,8 @@ while session.is_running:
                 elif session.keys.escape and not show_spellbook:    # Opening the in game options menu upon escape being pressed
                     current = "in game options menu"
 
-                if show_hud:
-                    hud.display(spells, inventory, vincent)
+                if session.game.hud.is_unlocked:
+                    session.game.hud.display(spells, inventory, vincent)
 
                 # Showing number drops
                 for index in range(len(number_drops)):

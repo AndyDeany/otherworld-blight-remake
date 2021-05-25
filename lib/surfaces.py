@@ -1,17 +1,15 @@
 import pygame
 
+from lib.base import Base
 
-class Surface:
 
-    default_screen = None
-
-    @classmethod
-    def initialise(cls, session):
-        cls.default_screen = session.screen
+class Surface(Base):
+    """Class for representing a pygame.Surface object with extra utilities."""
 
     def __init__(self, default_coords: tuple):
         self.default_x, self.default_y = default_coords
         self.surface = None
+        self.default_screen = self.session.screen
 
     def display(self, x=None, y=None, *, area=None, special_flags=0, screen=None):
         x = x if x is not None else self.default_x
