@@ -34,3 +34,7 @@ class Coordinates:
     def left(self):
         """Get the coordinates to the left of this one."""
         return Coordinates(self.x - 1, self.y)
+
+    def distance_to(self, other):
+        """Return the taxicab distance between this set of coordinates and the given one."""
+        return abs(self.x - other.x) + abs(self.y - other.y)

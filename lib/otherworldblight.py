@@ -517,7 +517,7 @@ class Npc(Character):
                 for adjacent in adjacents:
                     if adjacent == goal:
                         goal = adjacent
-                        goal_reached = True # Showing that the goal has been reached
+                        goal_reached = True
                         break
                     elif (adjacent in room.blocked
                           or adjacent in [cell for cell in processed]):
@@ -527,10 +527,10 @@ class Npc(Character):
                 if goal_reached:
                     break
 
-            else:   # If the algorithm is unable to find a route to the goal, it will create a route to the closest square to the goal
+            else:   # Unable to find a route to the goal - create a route to the next closest square
                 closest_square = processed[0]   # Default VALID value
                 for square in processed:
-                    if (abs(square.x - goal.x) + abs(square.y - goal.y) < abs(closest_square.x - goal.x) + abs(closest_square.y - goal.y)):
+                    if square.distance_to(goal) < closest_square.distance_to(goal):
                         closest_square = square
                 goal = closest_square
 
