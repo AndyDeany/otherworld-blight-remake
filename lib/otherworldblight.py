@@ -1412,14 +1412,13 @@ while session.is_running:
             
             elif current[8] == "3":
                 current_room.display_room(vincent)
+                hud.display(spells, inventory, vincent)
                 if cutscene_time < 10000:
                     display_spellbook()
                     tutorial[2].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 10000
                 elif cutscene_time < 20000:
-                    hud.display(spells, inventory, vincent)
-                    firebolt.icon_image.display(760, 1029)
                     display_spellbook()
                     if session.keys.escape or session.keys.backspace:
                         cutscene_start_time = session.uptime - 20000
@@ -1444,17 +1443,11 @@ while session.is_running:
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 70000
                 elif cutscene_time < 80000:
-                    hud.display(spells, inventory, vincent)
-                    firebolt.icon_image.display(760, 1029)
                     tutorial[8].display(0, 0)
                     if session.keys.space or session.keys.enter or session.keys.numpad_enter:
                         cutscene_start_time = session.uptime - 80000
                 else:
-                    hud.display(spells, inventory, vincent)
-                    firebolt.icon_image.display(760, 1029)
                     show_hud = True
-                    firebolt.unlocked = True
-                    spells.append(firebolt)
                     cutscene_played[3] = True
                     current = "in game"
             
@@ -1782,6 +1775,8 @@ while session.is_running:
                         if is_interactable(Coordinates(46, 20)):
                             current_room.extras.remove(book_item)
                             current_room.extras.remove(book_light)
+                            firebolt.unlocked = True
+                            spells.append(firebolt)
                             cutscene_start_time = session.uptime
                             current = "cutscene3"
                     elif not cutscene_played[4]:
