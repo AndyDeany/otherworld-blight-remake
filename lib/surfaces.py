@@ -9,12 +9,11 @@ class Surface(Base):
     def __init__(self, default_coords: tuple):
         self.default_x, self.default_y = default_coords
         self.surface = None
-        self.default_screen = self.session.screen
 
     def display(self, x=None, y=None, *, area=None, special_flags=0, screen=None):
         x = x if x is not None else self.default_x
         y = y if y is not None else self.default_y
-        screen = screen or self.default_screen
+        screen = screen or self.session.screen
         screen.blit(self.surface, (x, y), area=area, special_flags=special_flags)
 
     def blit(self, source, dest, area=None, special_flags=0):
@@ -37,6 +36,8 @@ class Surface(Base):
 
 
 class Image(Surface):
+    """Class for representing an image loaded from an image file."""
+
     def __init__(self, path_or_surface, default_coords=(None, None), *, convert_alpha=True):
         super().__init__(default_coords)
         if isinstance(path_or_surface, pygame.Surface):
@@ -52,6 +53,8 @@ class Image(Surface):
 class Text(Surface):
     """Class for representing a generated text image."""
 
+    _OUTLINE_COORDS = ((0, 0), (0, 1), (0, 2), (1, 2), (2, 2), (2, 1), (2, 0), (1, 0))
+
     def __init__(self, text, font, color, default_coords: tuple = (None, None), *,
                  antialias=True, with_outline=False, outline_color=(0, 0, 0)):
         super().__init__(default_coords)
@@ -62,14 +65,8 @@ class Text(Surface):
             width, height = self.surface.get_size()
             outlined_image = pygame.Surface((width + 2, height + 2)).convert_alpha()
             pygame.draw.rect(outlined_image, (0, 0, 0, 0), [0, 0, width + 2, height + 2])
-            outlined_image.blit(outline_text, (0, 0))
-            outlined_image.blit(outline_text, (0, 1))
-            outlined_image.blit(outline_text, (0, 2))
-            outlined_image.blit(outline_text, (1, 2))
-            outlined_image.blit(outline_text, (2, 2))
-            outlined_image.blit(outline_text, (2, 1))
-            outlined_image.blit(outline_text, (2, 0))
-            outlined_image.blit(outline_text, (1, 0))
+            for coords in self._OUTLINE_COORDS:
+                outlined_image.blit(outline_text, coords)
             outlined_image.blit(self.surface, (1, 1))
             self.surface = outlined_image
             if self.default_x is not None:
