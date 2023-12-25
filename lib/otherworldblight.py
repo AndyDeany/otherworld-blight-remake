@@ -5,13 +5,6 @@ from operator import attrgetter
 import pygame
 from moviepy.editor import VideoFileClip
 
-pygame.init()
-monitor_info = pygame.display.Info()
-MONITOR_WIDTH = monitor_info.current_w
-MONITOR_HEIGHT = monitor_info.current_h
-os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
-screen = pygame.display.set_mode((1920, 1080), pygame.HWSURFACE | pygame.DOUBLEBUF | pygame.NOFRAME)
-
 
 from lib.base import Base
 from lib.session import Session
@@ -27,7 +20,7 @@ from lib.coordinates import Coordinates
 
 # VARIABLE ASSIGNMENT ------------------------------------------------------------------------------
 # Assigning essential game variables
-session = Session(screen)
+session = Session()
 show_spellbook = False
 levelling_up = False
 levelup_frame = 0
@@ -45,27 +38,9 @@ zaal_animation = -1
 font = pygame.font.SysFont("Arial Regular", 90, False, False)
 dropfont = pygame.font.SysFont("Impact", 20, False, False)
 
-screen_width, screen_height = session.screen.get_size()
 # Creating an extra surface for put on top of the screen, for fading
+screen_width, screen_height = session.screen.get_size()
 fade_screen = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
-
-
-# Changes and reinitialises the screen with new settings
-def reinitialise_screen(resolution=(screen_width, screen_height), mode="fullscreen"):
-    global screen, screen_width, screen_height
-    screen_width, screen_height = resolution
-    flags = pygame.HWSURFACE | pygame.DOUBLEBUF
-    if mode == "fullscreen":
-        flags |= pygame.FULLSCREEN
-    elif mode == "windowed":
-        x, y = (MONITOR_WIDTH - screen_width)//2, (MONITOR_HEIGHT - screen_height)//2
-        os.environ['SDL_VIDEO_WINDOW_POS'] = f"{x},{y}"
-    elif mode == "borderless":
-        flags |= pygame.NOFRAME
-        os.environ['SDL_VIDEO_WINDOW_POS'] = "0,0"
-    else:
-        raise ValueError("Unknown mode for reinitialise_screen(): " + mode + "[coding syntax error].")
-    screen = pygame.display.set_mode(resolution, flags)
 
 
 # FUNCTION DEFINING --------------------------------------------------------------------------------
