@@ -59,3 +59,4 @@ class Session:
         self.mouse.update_coordinates()
         self.keys.reset()
         self.event_handling()
+        self.game.loop()

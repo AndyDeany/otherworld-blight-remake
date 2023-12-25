@@ -1,4 +1,3 @@
-import os
 import random
 from operator import attrgetter
 
@@ -7,6 +6,7 @@ from moviepy.editor import VideoFileClip
 
 
 from lib.base import Base
+from lib.number_dropper import NumberDrop
 from lib.session import Session
 from lib.audio import AudioClip
 from lib.surfaces import Image
@@ -18,7 +18,6 @@ from lib.item import Item
 from lib.coordinates import Coordinates
 
 
-# VARIABLE ASSIGNMENT ------------------------------------------------------------------------------
 # Assigning essential game variables
 session = Session()
 show_spellbook = False
@@ -42,8 +41,6 @@ dropfont = pygame.font.SysFont("Impact", 20, False, False)
 screen_width, screen_height = session.screen.get_size()
 fade_screen = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
 
-
-# FUNCTION DEFINING --------------------------------------------------------------------------------
 
 # Checking if the given arrow key has been held down the longest
 def is_longest_held(direction_held_time):
@@ -83,36 +80,7 @@ def is_interactable(coordinates):
             or (vincent.position == coordinates.down and vincent.orientation == "up"))
 
 
-# Defining functinos to show exp drops, damage values and healing values
-def number_drop(number_type, character, value):
-    """number_type = \"damage\", \"exp\", \"heal\""""
-    global number_drops
-    drop_x = character.x + character.width // 2
-    drop_y = character.y + character.height // 2
-    if number_type == "damage":
-        colour = (255, 0, 0)
-    elif number_type == "exp":
-        colour = (255, 215, 0)
-    elif number_type == "heal":
-        colour = (43, 255, 0)
-    else:
-        raise ValueError(f"Invalid number_type '{number_type}'.")
 
-    if value > 0:
-        if number_type == "damage":
-            value = str(-value)
-        else:
-            value = "+" + str(value)
-    else:
-        value = str(value)
-
-    number_drops.append([drop_x, drop_y, colour, value, drop_y])
-
-
-def display_number_drop(number_drop_item):
-    session.screen.blit(dropfont.render(number_drop_item[3], True, number_drop_item[2]),
-                        (number_drop_item[0], number_drop_item[1]))
-    return number_drop_item[1] - 3
 
 
 # Defining a function that displays the spellbook
@@ -337,7 +305,7 @@ class Character(Base):    # maybe add an "id" attribute. One to identify each ob
                                 
     def gain_exp(self, opponent):
         self.exp += opponent.exp
-        number_drop("exp", self, opponent.exp)
+        session.game.number_dropper.create(NumberDrop.TYPE_EXP, self, opponent.exp)
         # Add exp drop code here? Perhaps call another function here to do it?
 
 
@@ -439,7 +407,7 @@ class Npc(Character):
         if self.position == player.position and self.damage_cooldown == 0 and self.alive:
             damage_dealt = int(self.damage*(0.9 + 0.2*random.random()))
             player.current_life -= damage_dealt
-            number_drop("damage", player, damage_dealt)
+            session.game.number_dropper.create(NumberDrop.TYPE_DAMAGE, player, -damage_dealt)
             self.damage_cooldown = session.fps
         elif self.damage_cooldown > 0:
             self.damage_cooldown -= 1
@@ -622,13 +590,13 @@ class Ability(Character):
                 if npc.position == self.position and self.alive:
                     damage_dealt = int(self.damage*(0.9 + 0.2*random.random()))
                     npc.current_life -= damage_dealt
-                    number_drop("damage", npc, damage_dealt)
+                    session.game.number_dropper.create(NumberDrop.TYPE_DAMAGE, npc, damage_dealt)
                     self.alive = False
         else:
             if self.position == vincent.position and self.alive:
                 damage_dealt = int(self.damage*(0.9 + 0.2*random.random()))
                 vincent.current_life -= damage_dealt
-                number_drop("damage", vincent, damage_dealt)
+                session.game.number_dropper.create(NumberDrop.TYPE_DAMAGE, vincent, damage_dealt)
                 self.alive = False
                 
 
@@ -1057,7 +1025,6 @@ loot = Loot()
 spells = [] # The characters unlocked spells
 inventory = [] # The characters inventory
 slime_chunk = Item("Slime Chunk", Image("hud/slime_chunk.png"), Image("loot/slime_chunk.png"))
-number_drops = []   # The list of current number drops
 menus = {"main menu": Menu("main", ["title"],
                            [["play"], ["options"], ["controls"], ["exit"]],
                            [(620, 605, 1300, 648), (620, 663, 1300, 706), (620, 717, 1300, 760), (620, 774, 1300, 817)],
@@ -1434,7 +1401,7 @@ while session.is_running:
                         cutscene_start_time = session.uptime - 10025
                 else:
                     vincent.exp += 35
-                    number_drop("exp", vincent, 35)
+                    session.game.number_dropper.create(NumberDrop.TYPE_EXP, vincent, 35)
                     mean_slime.room = 2
                     mean_slime.moves = ["right" for n in range(100)] + ["down" for n in range(10)]
                     cutscene_played[4] = True
@@ -1667,7 +1634,7 @@ while session.is_running:
                     if firebolt.position in [(10, 2), (11, 2), (12, 2), (10, 3), (11, 3), (12, 3)] and firebolt.alive:
                         damage_dealt = int(firebolt.damage*(0.9 + 0.2*random.random()))
                         zaal_life -= damage_dealt
-                        number_drop("damage", firebolt, damage_dealt)
+                        session.game.number_dropper.create(NumberDrop.TYPE_DAMAGE, firebolt, -damage_dealt)
                         firebolt.alive = False
 
                     if zaal_life <= 0:
@@ -1687,13 +1654,7 @@ while session.is_running:
                 if session.game.hud.is_unlocked:
                     session.game.hud.display(spells, inventory, vincent)
 
-                # Showing number drops
-                for index in range(len(number_drops)):
-                    number_drops[index][1] = display_number_drop(number_drops[index])
 
-                for item in number_drops:
-                    if item[1] < item[4]-90:
-                        number_drops.remove(item)
 
                 if show_spellbook:
                     display_spellbook()
